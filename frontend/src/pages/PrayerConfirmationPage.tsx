@@ -1,27 +1,70 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/UI';
-import { NewsEvent } from '@/types';
+import { GeneratedPrayer } from '../types/ai';
+import { NewsEvent } from '../types';
+import { PrayerAudioPlayer } from '../components/Audio';
+import { Button } from '../components/UI';
 
-interface GeneratedPrayer {
-  id: string;
-  content: string;
-  userIntent: string;
-  eventId?: string;
-  createdAt: string;
+interface GeneratedPrayerState {
+  generatedPrayer: GeneratedPrayer;
+  selectedEvent?: NewsEvent;
 }
 
 const PrayerConfirmationPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  const generatedPrayer = location.state?.generatedPrayer as GeneratedPrayer;
-  const selectedEvent = location.state?.selectedEvent as NewsEvent;
+  const state = location.state as GeneratedPrayerState | null;
+  const generatedPrayer = state?.generatedPrayer;
+  const selectedEvent = state?.selectedEvent;
 
+  if (!generatedPrayer) {
+    return (
+      <div className="relative w-screen h-screen flex items-center justify-center bg-gradient-to-b from-black via-gray-900 to-black text-white">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">No Prayer Found</h2>
+          <p className="text-gray-400 mb-6">Please generate a prayer first.</p>
+          <Button
+            onClick={() => navigate('/submit-prayer')}
+            variant="gradient-gold"
+            className="px-6 py-3"
+          >
+            Generate Prayer
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const handleGoToWall = () => {
+    navigate('/wall-of-prayers');
+  };
+
+  const handleSharePrayer = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'My Prayer from AYA',
+          text: `"${generatedPrayer.generatedText}" - Generated through AYA's global prayer network`,
+          url: window.location.origin + '/globe',
+        });
+      } else {
+        // Fallback to copying to clipboard
+        await navigator.clipboard.writeText(generatedPrayer.generatedText);
+        alert('Prayer copied to clipboard!');
+      }
+    } catch (error) {
+      console.error('Error sharing prayer:', error);
+      // Fallback alert
+      alert('Share functionality: Copy this prayer and share it with others to spread light and hope!');
+    }
+  };
+
+  // Helper function to render starry background
   const renderStarryBackground = () => {
     return (
       <div className="absolute inset-0">
-        {Array.from({ length: 100 }).map((_, i) => (
+        {Array.from({ length: 150 }).map((_, i) => (
           <div
             key={i}
             className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
@@ -61,10 +104,7 @@ const PrayerConfirmationPage: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center space-x-3">
             <div className="text-white font-bold text-xl">AYA</div>
-            <div className="text-gray-400 text-sm">
-              <div>One prayer</div>
-              <div>One world</div>
-            </div>
+            <div className="text-gray-400 text-sm">Global Prayer Network</div>
           </div>
           
           {/* Wall of Prayers */}
@@ -76,85 +116,111 @@ const PrayerConfirmationPage: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex items-center justify-center h-full pt-20 pb-10 px-6">
-        <div className="bg-black bg-opacity-80 backdrop-blur-sm rounded-lg shadow-2xl max-w-2xl w-full p-8 text-center">
+        <div className="bg-black bg-opacity-80 backdrop-blur-sm rounded-lg shadow-2xl max-w-6xl w-full flex overflow-hidden">
           
-          {/* Candle Icon */}
-          <div className="mb-6">
-            <div className="text-6xl mb-4">🕯️</div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              Your Candle Has Been Lit
-            </h1>
-            <p className="text-gray-300 text-lg">
-              Your prayer has been added to the global wall of prayers
-            </p>
-          </div>
+          {/* Left Side - Prayer Content */}
+          <div className="w-1/2 p-8">
+            {/* Candle Icon and Header */}
+            <div className="mb-6">
+              <div className="flex items-center mb-4">
+                <div className="text-4xl mr-3">🕯️</div>
+                <h3 className="text-white font-bold text-xl">Your Candle Has Been Lit</h3>
+              </div>
+              <p className="text-gray-300 text-sm">
+                Your prayer has been added to the global wall of prayers
+              </p>
+            </div>
 
-          {/* Prayer Content */}
-          {generatedPrayer && (
-            <div className="mb-8 p-6 bg-gray-800 bg-opacity-60 rounded-lg border border-gray-600">
-              <h2 className="text-xl font-semibold text-white mb-4">Your Generated Prayer</h2>
-              <p className="text-gray-300 leading-relaxed italic">
-                "{generatedPrayer.content}"
+            {/* Generated Prayer Text */}
+            <div className="mb-6 p-6 bg-gray-800 bg-opacity-60 rounded-lg border border-gray-600">
+              <h4 className="text-yellow-400 font-semibold mb-3">Generated Prayer</h4>
+              <p className="text-white text-lg italic leading-relaxed">
+                "{generatedPrayer.generatedText}"
               </p>
               
-              {generatedPrayer.userIntent && (
-                <div className="mt-4 pt-4 border-t border-gray-600">
-                  <p className="text-sm text-gray-400">
-                    Based on your intention: "{generatedPrayer.userIntent}"
+              {/* Prayer Details */}
+              <div className="mt-4 pt-4 border-t border-gray-600">
+                <div className="text-sm text-gray-400">
+                  <p><strong>Intent:</strong> {generatedPrayer.userIntent}</p>
+                  {generatedPrayer.theme && (
+                    <p><strong>Theme:</strong> {generatedPrayer.theme}</p>
+                  )}
+                  <p><strong>Language:</strong> {generatedPrayer.language}</p>
+                  <p><strong>Length:</strong> {generatedPrayer.length}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Event Context */}
+            {selectedEvent && (
+              <div className="mb-6 p-4 bg-gray-800 bg-opacity-40 rounded-lg border border-gray-600">
+                <h4 className="text-blue-400 font-semibold mb-2">Related Event</h4>
+                <p className="text-white text-sm">{selectedEvent.title}</p>
+                <p className="text-gray-400 text-xs mt-1">{selectedEvent.country}</p>
+              </div>
+            )}
+
+            {/* Thank You Message */}
+            <p className="text-gray-300 text-sm mb-6">
+              <strong>Thank you for spreading your light.</strong><br/>
+              Your little candle can light up a room full of darkness.
+            </p>
+
+            {/* Action Button */}
+            <Button
+              onClick={handleGoToWall}
+              variant="gradient-gold"
+              className="w-full py-3 text-lg font-semibold"
+            >
+              Go to Wall of Prayers
+            </Button>
+          </div>
+
+          {/* Right Side - Audio Player and Share */}
+          <div className="w-1/2 p-8 flex flex-col items-center justify-center bg-gray-900 bg-opacity-30">
+            {/* Audio Player Section */}
+            <div className="w-full max-w-sm mb-8">
+              {generatedPrayer.audioGenerated && generatedPrayer.s3FileUrl ? (
+                <PrayerAudioPlayer 
+                  audioUrl={generatedPrayer.s3FileUrl} 
+                  title="Your Generated Prayer"
+                  className="w-full"
+                />
+              ) : (
+                <div className="text-center p-6 bg-gray-800 bg-opacity-60 rounded-lg border border-gray-600">
+                  <div className="text-4xl mb-3">🎧</div>
+                  <p className="text-white font-semibold mb-2">Audio Not Generated</p>
+                  <p className="text-gray-400 text-sm mb-4">
+                    Audio generation was not enabled for this prayer
                   </p>
+                  <Button
+                    onClick={() => {
+                      // Could implement re-generation with audio
+                      alert('Audio generation feature coming soon!');
+                    }}
+                    variant="secondary"
+                    className="text-sm px-4 py-2"
+                  >
+                    Generate Audio
+                  </Button>
                 </div>
               )}
             </div>
-          )}
 
-          {/* Event Context */}
-          {selectedEvent && (
-            <div className="mb-8 p-4 bg-gray-800 bg-opacity-40 rounded-lg border border-gray-600">
-              <h3 className="text-lg font-semibold text-white mb-2">Prayer Context</h3>
-              <p className="text-gray-300 text-sm">
-                Your prayer is connected to: <span className="font-medium">{selectedEvent.title}</span>
-              </p>
-              <p className="text-gray-400 text-sm mt-1">
-                Location: {selectedEvent.country}
-              </p>
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              onClick={() => navigate('/globe')}
-              variant="secondary"
-              className="px-6 py-3"
+            {/* Share Button */}
+            <button
+              onClick={handleSharePrayer}
+              className="w-32 h-32 flex flex-col items-center justify-center bg-gradient-to-br from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white rounded-full text-sm font-medium transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105"
             >
-              Return to Globe
-            </Button>
-            
-            <Button
-              onClick={() => navigate('/submit-prayer')}
-              variant="gradient-gold"
-              className="px-6 py-3"
-            >
-              Light Another Candle
-            </Button>
-          </div>
+              <div className="text-2xl mb-1">📤</div>
+              <span>Share</span>
+              <span>Prayer</span>
+            </button>
 
-          {/* Share Options */}
-          <div className="mt-8 pt-6 border-t border-gray-600">
-            <p className="text-gray-400 text-sm mb-4">
-              Share your light with the world
+            {/* Share Info */}
+            <p className="text-gray-400 text-xs text-center mt-4 max-w-xs">
+              Share your light with the world and inspire others to pray
             </p>
-            <div className="flex justify-center space-x-4">
-              <button className="text-gray-400 hover:text-white transition-colors text-sm">
-                📱 Share on Social
-              </button>
-              <button className="text-gray-400 hover:text-white transition-colors text-sm">
-                📧 Email Prayer
-              </button>
-              <button className="text-gray-400 hover:text-white transition-colors text-sm">
-                📋 Copy Link
-              </button>
-            </div>
           </div>
         </div>
       </div>

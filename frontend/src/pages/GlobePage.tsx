@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNewsEvents } from '@/hooks';
 import { NewsEvent } from '@/types';
-import { RealGlobe3D, getTimeAgo, getPriorityColor } from '@/utils';
-import { Button, AudioPlayer } from '@/components/UI';
+import { getTimeAgo, getPriorityColor } from '@/utils';
+import { Button, AudioPlayer, LoadingSpinner } from '@/components/UI';
+
+// Lazy load the Globe3D component for better initial page load performance
+const LazyGlobe3D = lazy(() => import('@/components/Globe/Globe3D'));
 
 /**
  * GlobePage component - Interactive 3D globe with news events
@@ -15,65 +18,12 @@ const GlobePage: React.FC = () => {
   const navigate = useNavigate();
   const [selectedEvent, setSelectedEvent] = useState<NewsEvent | null>(null);
   const [isPanelExpanded, setIsPanelExpanded] = useState(false);
-  const globeContainerRef = useRef<HTMLDivElement>(null);
-  const globeInstanceRef = useRef<RealGlobe3D | null>(null);
 
   // Handle marker click events
   const handleMarkerClick = useCallback((event: NewsEvent) => {
     setSelectedEvent(event);
     setIsPanelExpanded(true);
   }, []);
-
-  // Initialize Globe once when component mounts
-  useEffect(() => {
-    const initGlobe = async () => {
-      if (globeContainerRef.current && !globeInstanceRef.current) {
-        try {
-          // Clear container first
-          globeContainerRef.current.innerHTML = '';
-          
-          // Initialize with container element (exact same pattern as original Globe)
-          const globeInstance = new RealGlobe3D(globeContainerRef.current);
-          globeInstanceRef.current = globeInstance;
-          
-          // Add event listener for marker clicks
-          globeInstance.addEventListener('markerClick', handleMarkerClick);
-          
-          console.log('Globe initialized successfully');
-        } catch (error) {
-          console.error('Failed to initialize Globe3D:', error);
-        }
-      }
-    };
-
-    initGlobe();
-
-    // Cleanup on unmount
-    return () => {
-      if (globeInstanceRef.current) {
-        globeInstanceRef.current.removeEventListener('markerClick', handleMarkerClick);
-        globeInstanceRef.current.dispose();
-        globeInstanceRef.current = null;
-      }
-    };
-  }, [handleMarkerClick]);
-
-  // Update markers when news data changes
-  useEffect(() => {
-    if (newsData?.data?.events && globeInstanceRef.current) {
-      // Clear existing markers
-      globeInstanceRef.current.clearEventMarkers();
-      
-      // Add new markers
-      newsData.data.events.forEach(event => {
-        if (globeInstanceRef.current) {
-          globeInstanceRef.current.addEventMarker(event);
-        }
-      });
-
-      console.log(`Added ${newsData.data.events.length} markers to globe`);
-    }
-  }, [newsData]);
 
   const handleJoinPrayer = () => {
     if (selectedEvent) {
@@ -115,22 +65,26 @@ const GlobePage: React.FC = () => {
 
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden">
-      {/* Globe Container - Full screen with exact original styling */}
-      <div 
-        ref={globeContainerRef} 
-        className="absolute inset-0 w-full h-full bg-gradient-to-b from-black via-gray-900 to-black"
-        style={{
-          background: 'radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 35%, #0f0f23 100%)'
-        }}
-      />
+      {/* Lazy-loaded Globe3D Component */}
+      <Suspense fallback={
+        <div className="absolute inset-0 flex items-center justify-center bg-black">
+          <LoadingSpinner 
+            message="Loading Interactive Globe..." 
+            className="text-white" 
+          />
+        </div>
+      }>
+        <LazyGlobe3D 
+          newsEvents={filteredEvents}
+          onMarkerClick={handleMarkerClick}
+          className="absolute inset-0 w-full h-full"
+        />
+      </Suspense>
 
-      {/* Loading overlay */}
+      {/* Loading overlay for news data */}
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
-          <div className="text-white text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-            <p>Loading Globe...</p>
-          </div>
+          <LoadingSpinner message="Loading News Events..." className="text-white" />
         </div>
       )}
 

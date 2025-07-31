@@ -4,6 +4,7 @@ import { LandingPage } from '@/pages';
 import GlobePage from '@/pages/GlobePage';
 import SubmitPrayerPage from '@/pages/SubmitPrayerPage';
 import PrayerConfirmationPage from '@/pages/PrayerConfirmationPage';
+import WallOfPrayersPage from '@/pages/WallOfPrayersPage';
 import { ButtonDemo } from '@/components/UI';
 import './App.css';
 
@@ -19,6 +20,7 @@ function App() {
           <Route path="/globe" element={<GlobePage />} />
           <Route path="/submit-prayer" element={<SubmitPrayerPage />} />
           <Route path="/prayer-confirmation" element={<PrayerConfirmationPage />} />
+          <Route path="/wall-of-prayers" element={<WallOfPrayersPage />} />
           <Route path="/components" element={
             <div className="min-h-screen bg-[#f9fafb]">
               <div className="container mx-auto py-8">

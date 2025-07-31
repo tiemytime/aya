@@ -24,6 +24,10 @@ export const NEWS_CONFIG = {
     import.meta.env.REACT_APP_NEWS_REFRESH_INTERVAL || '300000',
     10
   ),
+  MAX_EVENTS: parseInt(
+    import.meta.env.REACT_APP_MAX_NEWS_EVENTS || '200',
+    10
+  ),
   DEFAULT_PAGINATION: {
     PAGE: 1,
     LIMIT: 50,
@@ -47,6 +51,7 @@ export const PRAYER_CONFIG = {
   LENGTHS: ['short', 'medium', 'long'] as const,
   MAX_KEYWORDS: 5,
   MAX_INTENTION_LENGTH: 500,
+  ENABLE_AUDIO: import.meta.env.REACT_APP_ENABLE_AUDIO_PRAYERS === 'true',
 } as const;
 
 // UI Constants

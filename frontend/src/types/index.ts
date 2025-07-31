@@ -82,3 +82,6 @@ export interface RegisterData {
   password: string;
   username?: string;
 }
+
+// Export AI types
+export * from './ai';

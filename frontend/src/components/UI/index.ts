@@ -3,6 +3,7 @@ export { Button } from './Button';
 export type { ButtonProps } from './Button';
 export { ButtonDemo } from './ButtonDemo';
 export { AudioPlayer } from './AudioPlayer';
+export { default as LoadingSpinner } from './LoadingSpinner';
 
 // Will be populated as more components are added
 // export { Input } from './Input';
