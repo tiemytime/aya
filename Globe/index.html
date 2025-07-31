@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Interactive News Globe - iPray</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #000a0f 0%, #001a2e 50%, #0a1a1f 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            cursor: default;
+        }
+        
+        /* Loading Screen */
+        #loadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #000a0f 0%, #001a2e 50%, #0a1a1f 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 215, 0, 0.3);
+            border-top: 3px solid #FFD700;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            color: #FFD700;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        .loading-subtitle {
+            color: #ccc;
+            font-size: 14px;
+        }
+        
+        /* Info Panel */
+        #infoPanel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(10, 24, 27, 0.8);
+            border: 2px solid #FFD700;
+            border-radius: 15px;
+            padding: 15px;
+            color: white;
+            font-size: 14px;
+            max-width: 300px;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+        
+        #infoPanel h3 {
+            color: #FFD700;
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+        
+        #infoPanel p {
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+        
+        .event-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #FFD700;
+            font-size: 12px;
+        }
+        
+        /* Controls */
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 8px;
+            z-index: 100;
+            flex-wrap: wrap;
+            max-width: 300px;
+        }
+        
+        .control-btn {
+            background: rgba(10, 24, 27, 0.9);
+            border: 2px solid #FFD700;
+            border-radius: 20px;
+            color: #FFD700;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            white-space: nowrap;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255, 215, 0, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+        }
+        
+        .control-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Status indicator */
+        #statusIndicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 100;
+        }
+        
+        .status-online {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+        }
+        
+        .status-offline {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff0000;
+            color: #ff0000;
+        }
+    </style>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.161/build/three.module.js",
+                "jsm/": "https://cdn.jsdelivr.net/npm/three@0.161/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading News Globe</div>
+        <div class="loading-subtitle">Ready for manual event loading...</div>
+    </div>
+    
+    <!-- Info Panel -->
+    <div id="infoPanel">
+        <h3>🌍 Global News Events</h3>
+        <p>Interactive 3D visualization of real-time news events around the world.</p>
+        <p><strong>🔄 Controls:</strong> Drag to rotate, scroll to zoom</p>
+        <p><strong>💛 Yellow markers:</strong> Click for event details and prayer generation</p>
+        <div class="event-stats">
+            <span>Events: <span id="eventCount" style="color: #FFD700; font-weight: bold;">0</span></span>
+            <span>Last Update: <span id="lastUpdate" style="color: #FFD700;">Manual only</span></span>
+        </div>
+        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #FFD700; font-size: 11px; color: #ccc;">
+            <div>� Bright Yellow: High Priority (7-10) | 🌟 Dim Yellow: Lower Priority (1-6)</div>
+            <div style="margin-top: 5px;">Backend: <span id="backendStatus" style="color: #888;">Ready</span></div>
+        </div>
+    </div>
+    
+    <!-- Status Indicator -->
+    <div id="statusIndicator" class="status-offline">
+        � Ready - Click "Load Events"
+    </div>
+    
+    <!-- Controls -->
+    <div id="controls">
+        <button class="control-btn" onclick="refreshEvents()">🔄 Load Events</button>
+        <button class="control-btn" onclick="toggleAutoRefresh()">▶️ Start Auto-Refresh</button>
+        <button class="control-btn" onclick="toggleInfo()">ℹ️ Toggle Info</button>
+    </div>
+    
+    <script type="module" src="index.js"></script>
+    
+    <script>
+        // Hide loading screen when page loads
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const loadingScreen = document.getElementById('loadingScreen');
+                loadingScreen.style.opacity = '0';
+                loadingScreen.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => loadingScreen.style.display = 'none', 500);
+            }, 2000);
+        });
+        
+        // Control functions
+        function refreshEvents() {
+            if (window.globe) {
+                console.log('Manual refresh triggered');
+                window.globe.loadEventData();
+                updateStatus('🔄 Refreshing events...', 'status-offline');
+                updateBackendStatus('Manual refresh...', false);
+            }
+        }
+        
+        function toggleInfo() {
+            const panel = document.getElementById('infoPanel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function toggleAutoRefresh() {
+            if (window.globe) {
+                if (window.globe.refreshInterval) {
+                    window.globe.stopAutoRefresh();
+                    document.querySelector('[onclick="toggleAutoRefresh()"]').textContent = '▶️ Start Auto-Refresh';
+                } else {
+                    window.globe.startAutoRefresh();
+                    document.querySelector('[onclick="toggleAutoRefresh()"]').textContent = '⏸️ Stop Auto-Refresh';
+                }
+            }
+        }
+        
+        function updateStatus(message, className) {
+            const indicator = document.getElementById('statusIndicator');
+            indicator.textContent = message;
+            indicator.className = className;
+        }
+        
+        function updateEventCount(count) {
+            document.getElementById('eventCount').textContent = count;
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        }
+        
+        function updateBackendStatus(status, isOnline = false) {
+            const backendStatus = document.getElementById('backendStatus');
+            if (backendStatus) {
+                backendStatus.textContent = status;
+                backendStatus.style.color = isOnline ? '#4CAF50' : '#ff4444';
+            }
+        }
+        
+        // Make functions available globally
+        window.updateStatus = updateStatus;
+        window.updateEventCount = updateEventCount;
+        window.updateBackendStatus = updateBackendStatus;
+        window.refreshEvents = refreshEvents;
+        window.toggleInfo = toggleInfo;
+        window.toggleAutoRefresh = toggleAutoRefresh;
+    </script>
+</body>
+</html>
