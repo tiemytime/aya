@@ -6,3 +6,4 @@ export { default as WallOfPrayersPage } from './WallOfPrayersPage';
 export { default as UserProfilePage } from './UserProfilePage';
 export { default as EditProfilePage } from './EditProfilePage';
 export { default as PrayerConfirmationPage } from './PrayerConfirmationPage';
+export { default as NotFoundPage } from './NotFoundPage';

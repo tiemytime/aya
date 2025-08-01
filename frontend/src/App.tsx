@@ -1,19 +1,20 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { LandingPage } from '@/pages';
-import GlobePage from '@/pages/GlobePage';
-import SubmitPrayerPage from '@/pages/SubmitPrayerPage';
+import { Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { LandingPage, GlobePage, SubmitPrayerPage, WallOfPrayersPage, NotFoundPage } from '@/pages';
 import PrayerConfirmationPage from '@/pages/PrayerConfirmationPage';
-import WallOfPrayersPage from '@/pages/WallOfPrayersPage';
 import { ButtonDemo } from '@/components/UI';
 import './App.css';
+
+// Create a client instance outside of the component
+const queryClient = new QueryClient();
 
 /**
  * Main App component with routing
  */
 function App() {
   return (
-    <Router>
+    <QueryClientProvider client={queryClient}>
       <div className="App w-full h-full">
         <Routes>
           <Route path="/" element={<LandingPage />} />
@@ -39,11 +40,11 @@ function App() {
               </div>
             </div>
           } />
-          {/* Redirect any unknown routes to home */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Catch-all route for 404 page */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
-    </Router>
+    </QueryClientProvider>
   );
 }
 

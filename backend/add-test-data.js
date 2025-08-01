@@ -5,7 +5,7 @@
 
 const { MongoClient } = require('mongodb');
 
-const MONGO_URI = 'mongodb://localhost:27018/aya';
+const MONGO_URI = 'mongodb://localhost:27017/aya';
 
 const testEvents = [
   {

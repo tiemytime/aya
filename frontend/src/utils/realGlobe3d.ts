@@ -1,18 +1,20 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-// Types - Matched to frontend NewsEvent interface
+// Types - Matched to backend API structure
 export interface NewsEvent {
-  _id: string;
+  _id?: string;
+  id?: string;
   title: string;
   description: string;
   country: string;
-  latitude: number;
-  longitude: number;
+  lat: number;
+  lng: number;
   priority: number; // 1-10
-  published_at: string;
+  published_at?: string;
+  publishedAt?: string;
   source: string;
-  url: string;
+  url?: string;
   category?: string;
   imageUrl?: string;
 }
@@ -615,14 +617,14 @@ export class RealGlobe3D {
    */
   private createEventMarker(eventData: NewsEvent): THREE.Mesh | null {
     // Validate coordinates
-    if (!eventData.latitude || !eventData.longitude || isNaN(eventData.latitude) || isNaN(eventData.longitude)) {
-      console.warn(`Invalid coordinates for event ${eventData.title}:`, { lat: eventData.latitude, lng: eventData.longitude });
+    if (!eventData.lat || !eventData.lng || isNaN(eventData.lat) || isNaN(eventData.lng)) {
+      console.warn(`Invalid coordinates for event ${eventData.title}:`, { lat: eventData.lat, lng: eventData.lng });
       return null;
     }
     
     // Place markers closer to globe surface for better integration
-    const position = this.latLngToVector3(eventData.latitude, eventData.longitude, CONFIG.GLOBE.radius + 0.06);
-    console.log(`Converting lat:${eventData.latitude}, lng:${eventData.longitude} to 3D position:`, position);
+    const position = this.latLngToVector3(eventData.lat, eventData.lng, CONFIG.GLOBE.radius + 0.06);
+    console.log(`Converting lat:${eventData.lat}, lng:${eventData.lng} to 3D position:`, position);
     
     // Create larger marker geometry for visibility
     const markerSize = Math.max(
@@ -664,7 +666,7 @@ export class RealGlobe3D {
       isHovered: false
     };
     
-    console.log(`✓ Created LARGE ${isHighPriority ? 'BRIGHT' : 'DIM'} marker for ${eventData.title} at lat:${eventData.latitude}, lng:${eventData.longitude}, size:${markerSize.toFixed(3)}, 3D position:`, position);
+    console.log(`✓ Created LARGE ${isHighPriority ? 'BRIGHT' : 'DIM'} marker for ${eventData.title} at lat:${eventData.lat}, lng:${eventData.lng}, size:${markerSize.toFixed(3)}, 3D position:`, position);
     
     return marker;
   }
@@ -839,7 +841,7 @@ export class RealGlobe3D {
     const marker = this.createEventMarker(eventData);
     if (marker) {
       this.markerGroup.add(marker);
-      this.eventMarkers.set(eventData._id, marker);
+      this.eventMarkers.set(eventData._id || eventData.id || eventData.title, marker);
       console.log(`✓ Added marker for ${eventData.title} to globe. Total markers: ${this.eventMarkers.size}`);
       return marker;
     } else {

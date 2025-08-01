@@ -63,7 +63,13 @@ const GlobePage: React.FC = () => {
     }
   };
 
-  const filteredEvents = newsData?.data?.events || [];
+  const filteredEvents = (newsData?.data?.events || []).filter(
+    (event: NewsEvent) => 
+      event.latitude !== null && 
+      event.latitude !== undefined && 
+      event.longitude !== null && 
+      event.longitude !== undefined
+  );
 
   if (error) {
     return (
