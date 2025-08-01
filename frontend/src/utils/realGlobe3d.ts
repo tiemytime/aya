@@ -792,6 +792,9 @@ export class RealGlobe3D {
   /**
    * Main animation loop - Exact port
    */
+  /**
+   * Main animation loop - Exact port from original
+   */
   private animate() {
     this.animationId = requestAnimationFrame(() => this.animate());
     
@@ -807,19 +810,27 @@ export class RealGlobe3D {
       (this.goldenCore.material as THREE.ShaderMaterial).uniforms.time.value = currentTime;
     }
     
-    // Update marker animations with subtle pulsing
-    this.eventMarkers.forEach(marker => {
-      if (marker.userData && marker.material) {
-        const { eventData } = marker.userData;
-        const pulseIntensity = 0.85 + 0.15 * Math.sin(currentTime * CONFIG.MARKERS.pulseSpeed + parseInt(eventData.id) * 0.1);
+    // Update beautiful golden marker animations with subtle pulsing
+    this.eventMarkers.forEach(markerGroup => {
+      // Check if the marker has proper userData and material
+      if (markerGroup.userData && markerGroup.material) {
+        const { eventData } = markerGroup.userData;
+        const pulseIntensity = 0.85 + 0.15 * Math.sin(currentTime * CONFIG.MARKERS.pulseSpeed + eventData._id.charCodeAt(0) * 0.1);
         const isHighPriority = eventData.priority >= 7;
         const baseIntensity = isHighPriority ? 1.0 : 0.8;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (marker.material as any).emissiveIntensity = baseIntensity * pulseIntensity;
+        
+        // Apply pulsing effect to emissive intensity if available
+        const material = markerGroup.material as THREE.MeshLambertMaterial;
+        if ('emissiveIntensity' in material) {
+          material.emissiveIntensity = baseIntensity * pulseIntensity;
+        }
       }
     });
     
+    // Update controls
     this.controls.update();
+    
+    // Render scene
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -900,8 +911,217 @@ export class RealGlobe3D {
     }
   }
 
+  /**
+   * Load event data from API - Exact port from original
+   */
   public async loadEventData() {
-    console.log('Globe ready to load event data');
+    try {
+      console.log('Loading event data from API...');
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      
+      const response = await fetch(`${CONFIG.API.baseUrl}/news/globe?limit=100`, {
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('API Response:', data);
+      
+      if (data.success && data.data.events) {
+        console.log(`Received ${data.data.events.length} events from API`);
+        
+        // Clear existing markers
+        this.clearEventMarkers();
+        console.log('Cleared existing markers');
+        
+        // Add new markers
+        data.data.events.forEach((eventData: NewsEvent, index: number) => {
+          console.log(`Adding marker ${index + 1}:`, eventData.title, `at (${eventData.latitude}, ${eventData.longitude}) priority: ${eventData.priority}`);
+          const marker = this.addEventMarker(eventData);
+          if (marker) {
+            console.log(`✓ Marker ${index + 1} created successfully at position:`, marker.position);
+          } else {
+            console.log(`✗ Failed to create marker ${index + 1}`);
+          }
+        });
+        
+        console.log(`Created ${this.eventMarkers.size} markers on globe`);
+        console.log('Marker group children count:', this.markerGroup.children.length);
+        
+        // Debug: List all marker positions
+        console.log('All marker positions:');
+        this.eventMarkers.forEach((marker, eventId) => {
+          if (marker && marker.position) {
+            console.log(`  Event ${eventId}: position`, marker.position, 'visible:', marker.visible);
+          }
+        });
+        
+        // Debug marker visibility
+        this.debugMarkerVisibility();
+        
+        this.lastDataRefresh = Date.now();
+        
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (error: unknown) {
+      let errorMessage = 'Connection failed';
+      
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          errorMessage = 'Request timeout';
+          console.error('Request timed out after 15 seconds');
+        } else if (error.message.includes('Failed to fetch')) {
+          errorMessage = 'Network error - check backend';
+          console.error('Network error: Backend may not be running on localhost:5000');
+        } else if (error.message.includes('HTTP')) {
+          errorMessage = `Server error: ${error.message}`;
+          console.error('HTTP error:', error.message);
+        } else {
+          console.error('Failed to load event data:', error);
+        }
+      } else {
+        console.error('Failed to load event data:', error);
+      }
+      
+      console.error('Error loading event data:', errorMessage);
+    }
+  }
+
+  /**
+   * Ensure we have a minimum number of events by fetching fresh news if needed
+   */
+  public async ensureMinimumEvents(minEvents = 15): Promise<boolean> {
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (attempts < maxAttempts) {
+      // Check current event count
+      const checkResponse = await fetch(`${CONFIG.API.baseUrl}/news/globe?limit=1`);
+      if (checkResponse.ok) {
+        const checkData = await checkResponse.json();
+        if (checkData.success && checkData.data.total >= minEvents) {
+          console.log(`✓ We have ${checkData.data.total} events, which meets minimum of ${minEvents}`);
+          return true;
+        }
+        
+        console.log(`Only ${checkData.data.total} events available, fetching more news... (attempt ${attempts + 1})`);
+        
+        // Fetch more news with different categories
+        const categories = ['world', 'general', 'business', 'technology'];
+        const category = categories[attempts % categories.length];
+        
+        const globalResponse = await fetch(`${CONFIG.API.baseUrl}/news/global?limit=30&category=${category}`);
+        if (!globalResponse.ok) {
+          console.warn(`Failed to fetch ${category} news`);
+        }
+        
+        // Wait a bit for database to process
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      attempts++;
+    }
+    
+    console.log(`Could not reach minimum of ${minEvents} events after ${maxAttempts} attempts`);
+    return false;
+  }
+
+  /**
+   * Start auto-refresh of event data (disabled by default)
+   */
+  public startAutoRefresh(): void {
+    // Clear any existing interval
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
+    
+    // Set up auto-refresh
+    this.refreshInterval = window.setInterval(() => {
+      const timeSinceLastRefresh = Date.now() - this.lastDataRefresh;
+      if (timeSinceLastRefresh >= CONFIG.API.refreshInterval) {
+        console.log('Auto-refreshing event data...');
+        this.loadEventData();
+      }
+    }, CONFIG.API.refreshInterval);
+    
+    console.log(`Auto-refresh started: every ${CONFIG.API.refreshInterval / 1000} seconds`);
+  }
+
+  /**
+   * Stop auto-refresh
+   */
+  public stopAutoRefresh(): void {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+      this.refreshInterval = null;
+      console.log('Auto-refresh stopped');
+    }
+  }
+
+  /**
+   * Debug function to check marker visibility from camera perspective
+   */
+  public debugMarkerVisibility(): void {
+    console.log('=== MARKER VISIBILITY DEBUG ===');
+    console.log(`Total markers created: ${this.eventMarkers.size}`);
+    console.log(`Marker group children: ${this.markerGroup.children.length}`);
+    
+    this.eventMarkers.forEach((marker) => {
+      if (marker && marker.position) {
+        // Calculate distance from camera
+        const distance = this.camera.position.distanceTo(marker.position);
+        
+        // Check if marker is in front of the globe center from camera's perspective
+        const globeCenter = new THREE.Vector3(0, 0, 0);
+        const cameraToGlobe = globeCenter.clone().sub(this.camera.position).normalize();
+        const cameraToMarker = marker.position.clone().sub(this.camera.position).normalize();
+        const dot = cameraToGlobe.dot(cameraToMarker);
+        
+        const eventData = marker.userData?.eventData;
+        console.log(`  ${eventData?.title || 'Unknown'}:`, {
+          position: marker.position,
+          distance: distance.toFixed(3),
+          dotProduct: dot.toFixed(3),
+          facingCamera: dot > 0,
+          visible: marker.visible,
+          lat: eventData?.latitude,
+          lng: eventData?.longitude
+        });
+      }
+    });
+    console.log('==============================');
+  }
+
+  /**
+   * Add a test marker for debugging visibility
+   */
+  public addVisibilityTestMarker(): void {
+    // Add a test marker at an obvious location (North America)
+    const testPosition = this.latLngToVector3(40, -100, CONFIG.GLOBE.radius + 0.1);
+    
+    const testGeometry = new THREE.SphereGeometry(0.05, 16, 16);
+    const testMaterial = new THREE.MeshLambertMaterial({
+      color: 0xFF6600, // Bright orange for visibility
+      transparent: true,
+      opacity: 0.9,
+    });
+    
+    const testMarker = new THREE.Mesh(testGeometry, testMaterial);
+    testMarker.position.copy(testPosition);
+    
+    this.markerGroup.add(testMarker);
+    console.log('Added orange test marker for visibility check at:', testPosition);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

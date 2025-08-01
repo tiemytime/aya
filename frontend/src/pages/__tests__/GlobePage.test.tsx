@@ -2,6 +2,31 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Mock all dependencies
+vi.mock('@/hooks', () => ({
+  useNewsEvents: () => ({
+    data: { 
+      data: { 
+        events: [], 
+        pagination: { page: 1, limit: 50, total: 0, pages: 0 } 
+      } 
+    },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
+}));
+
+vi.mock('@/services', () => ({
+  apiService: {
+    getEventPrayerNotes: vi.fn().mockResolvedValue({
+      data: { notes: [], pagination: { page: 1, limit: 20, total: 0, pages: 0 } }
+    })
+  },
+  PrayerNote: {},
+}));
 
 // Mock all dependencies
 vi.mock('@/hooks', () => ({
@@ -44,10 +69,20 @@ import GlobePage from '../GlobePage';
 
 describe('GlobePage', () => {
   const renderGlobePage = () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+    
     return render(
-      <BrowserRouter>
-        <GlobePage />
-      </BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <GlobePage />
+        </BrowserRouter>
+      </QueryClientProvider>
     );
   };
 

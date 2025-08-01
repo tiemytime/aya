@@ -1,5 +1,7 @@
 # AYA Backend - Node.js API Server
 
+
+
 The AYA backend is a robust Node.js/Express API server that powers the global prayer platform. It provides RESTful endpoints for user authentication, AI-powered prayer generation, news event management, and community prayer sharing.
 
 ## 🏗️ Architecture Overview
@@ -197,6 +199,49 @@ GET /api/news/events?country=US&limit=50
 GET /api/news/events/:eventId
 ```
 
+#### Get Prayer Notes for Event
+```http
+GET /api/v1/events/:eventId/notes?page=1&limit=20
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "notes": [
+      {
+        "_id": "note_id",
+        "content": "Praying for peace and healing in this difficult time...",
+        "userId": {
+          "_id": "user_id",
+          "name": "User Name"
+        },
+        "lightId": {
+          "_id": "light_id",
+          "title": "Prayer Light Title",
+          "location": "New York, USA"
+        },
+        "likes": 5,
+        "isPublic": true,
+        "createdAt": "2025-07-31T12:00:00.000Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 15,
+      "pages": 1
+    },
+    "event": {
+      "_id": "event_id",
+      "title": "Breaking News Event",
+      "country": "United States"
+    }
+  }
+}
+```
+
 ### Prayer Notes Routes (`/api/prayers`)
 
 #### Create Prayer Note
@@ -232,6 +277,123 @@ Content-Type: application/json
 #### Delete Prayer Note
 ```http
 DELETE /api/prayers/notes/:noteId
+Authorization: Bearer <jwt_token>
+```
+
+### Light Routes (`/api/lights`)
+
+#### Create Light
+```http
+POST /api/lights
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+
+{
+  "location": "San Francisco, CA, USA",
+  "title": "Prayer for World Peace",
+  "description": "Lighting a candle for peace and healing around the world",
+  "isAnonymous": false
+}
+```
+
+#### Create Light with Prayer Note
+```http
+POST /api/lights/with-prayer
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+
+{
+  "location": "San Francisco, CA, USA",
+  "title": "Prayer for World Peace",
+  "description": "Lighting a candle for peace and healing around the world",
+  "isAnonymous": false,
+  "eventId": "optional_event_id",
+  "prayerContent": "I pray for peace, healing, and unity in our world. May this light shine hope into the darkness.",
+  "prayerIsPublic": true
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "light": {
+      "_id": "light_id",
+      "location": "San Francisco, CA, USA",
+      "title": "Prayer for World Peace",
+      "description": "Lighting a candle for peace and healing around the world",
+      "createdBy": {
+        "_id": "user_id",
+        "name": "User Name",
+        "email": "user@example.com"
+      },
+      "prayerNoteId": {
+        "_id": "prayer_note_id",
+        "content": "I pray for peace, healing, and unity in our world...",
+        "isPublic": true
+      },
+      "timestamp": "2025-07-31T12:00:00.000Z",
+      "status": "active",
+      "isAnonymous": false,
+      "prayerCount": 0
+    },
+    "prayerNote": {
+      "_id": "prayer_note_id",
+      "content": "I pray for peace, healing, and unity in our world...",
+      "lightId": {
+        "_id": "light_id",
+        "title": "Prayer for World Peace",
+        "location": "San Francisco, CA, USA"
+      },
+      "userId": {
+        "_id": "user_id",
+        "name": "User Name",
+        "email": "user@example.com"
+      },
+      "isPublic": true,
+      "likes": 0,
+      "createdAt": "2025-07-31T12:00:00.000Z"
+    },
+    "lightId": "light_id",
+    "prayerNoteId": "prayer_note_id"
+  },
+  "message": "Light and prayer note created successfully"
+}
+```
+
+#### Get All Lights
+```http
+GET /api/lights?page=1&limit=10&location=New York&status=active
+```
+
+#### Get Specific Light
+```http
+GET /api/lights/:lightId
+```
+
+#### Get My Lights
+```http
+GET /api/lights/my/lights?page=1&limit=10&status=active
+Authorization: Bearer <jwt_token>
+```
+
+#### Update Light
+```http
+PUT /api/lights/:lightId
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+
+{
+  "title": "Updated Prayer Title",
+  "description": "Updated prayer description",
+  "status": "completed"
+}
+```
+
+#### Delete Light
+```http
+DELETE /api/lights/:lightId
 Authorization: Bearer <jwt_token>
 ```
 
@@ -335,14 +497,25 @@ Content-Type: application/json
 ```javascript
 {
   _id: ObjectId,
-  userId: ObjectId (ref: User),
-  latitude: Number (required),
-  longitude: Number (required),
-  intention: String (optional),
-  isActive: Boolean (default: true),
-  duration: Number (minutes, default: 1440), // 24 hours
+  location: String (required), // Location where light is created
+  timestamp: Date (default: Date.now), // When the light was created
+  createdBy: ObjectId (ref: User, required), // User who created the light
+  
+  // Optional enhanced fields
+  title: String (optional, max 100 chars),
+  description: String (optional, max 1000 chars),
+  category: ObjectId (ref: Category, optional),
+  status: String (enum: ['active', 'completed', 'cancelled'], default: 'active'),
+  prayerCount: Number (default: 0, min: 0),
+  isAnonymous: Boolean (default: false),
+  
+  // Cross-model references
+  eventId: ObjectId (ref: Event, optional), // Associated news event
+  prayerNoteId: ObjectId (ref: PrayerNote, optional), // Associated prayer note
+  
+  // Automatically added by timestamps: true
   createdAt: Date,
-  expiresAt: Date
+  updatedAt: Date
 }
 ```
 
@@ -387,6 +560,15 @@ chmod +x test-ai-structure.sh
 ./test-ai-structure.sh
 ```
 
+#### Test Light API
+```bash
+# Make executable
+chmod +x test-light-api.sh
+
+# Test Light endpoints
+./test-light-api.sh
+```
+
 #### Manual Testing with curl
 ```bash
 # Health check
@@ -401,6 +583,15 @@ curl -X POST http://localhost:5000/api/auth/register \
 curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"Test123!"}'
+
+# Create a light (requires auth token)
+curl -X POST http://localhost:5000/api/lights \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <your_jwt_token>" \
+  -d '{"location":"New York, USA","title":"Prayer for Peace"}'
+
+# Get all lights
+curl -X GET http://localhost:5000/api/lights?limit=10
 ```
 
 ## 🔧 Development

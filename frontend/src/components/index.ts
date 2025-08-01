@@ -4,6 +4,6 @@
 export * from './UI';
 // Export Audio components with explicit naming to avoid conflicts
 export { AudioPlayer as FullAudioPlayer, PrayerAudioPlayer } from './Audio';
-// export * from './Globe';
+export * from './Globe';
 // export * from './Forms';
 // etc...

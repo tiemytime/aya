@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { GeneratedPrayer, PrayerHistoryResponse } from '@/types/ai';
+import { apiService } from '@/services';
 
 /**
- * Hook for fetching prayer history
- * This is a mock implementation - replace with actual API calls
+ * Hook for fetching prayer history with search functionality
  */
-export function usePrayerHistory(page = 1, limit = 10, theme?: string) {
+export function usePrayerHistory(page = 1, limit = 10, theme?: string, searchQuery?: string) {
   const [data, setData] = useState<PrayerHistoryResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -15,6 +15,36 @@ export function usePrayerHistory(page = 1, limit = 10, theme?: string) {
       setIsLoading(true);
       setError(null);
       
+      // If there's a search query, use the search endpoint
+      if (searchQuery && searchQuery.trim()) {
+        const response = await apiService.searchPrayerNotes(searchQuery.trim(), page, limit);
+        
+        // Transform response to match expected format
+        const transformedData: PrayerHistoryResponse = {
+          status: 'success',
+          data: {
+            prayers: response.data.prayerNotes.map(note => ({
+              _id: note._id,
+              userId: note.userId?._id || '',
+              userIntent: note.content,
+              theme: note.lightId?.title || 'General',
+              keywords: [],
+              language: 'English',
+              length: 'medium',
+              generatedText: note.content,
+              audioGenerated: false,
+              createdAt: note.createdAt,
+              updatedAt: note.updatedAt,
+            })),
+            pagination: response.pagination,
+          },
+        };
+        
+        setData(transformedData);
+        return;
+      }
+      
+      // Fall back to mock data when no search query or in development
       // Mock API call delay
       await new Promise(resolve => setTimeout(resolve, 500));
       
@@ -118,7 +148,7 @@ export function usePrayerHistory(page = 1, limit = 10, theme?: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [page, limit, theme]);
+  }, [page, limit, theme, searchQuery]);
 
   useEffect(() => {
     fetchPrayerHistory();

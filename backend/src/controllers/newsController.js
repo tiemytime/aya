@@ -632,6 +632,80 @@ class NewsController {
       });
     }
   }
+
+  /**
+   * Get prayer notes for a specific event
+   * @route GET /api/v1/events/:eventId/notes
+   */
+  static async getEventPrayerNotes(req, res) {
+    try {
+      const { eventId } = req.params;
+      const { page = 1, limit = 20 } = req.query;
+      
+      // Import PrayerNote model
+      const PrayerNote = require('../models/PrayerNote');
+      const Light = require('../models/Light');
+      
+      // First, verify the event exists
+      const event = await Event.findById(eventId);
+      if (!event) {
+        return res.status(404).json({
+          success: false,
+          message: 'Event not found'
+        });
+      }
+
+      // Find all lights associated with this event
+      const eventLights = await Light.find({ eventId }).select('_id');
+      const lightIds = eventLights.map(light => light._id);
+
+      // Calculate pagination
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+
+      // Find prayer notes associated with lights for this event
+      const prayerNotes = await PrayerNote.find({
+        lightId: { $in: lightIds },
+        isPublic: true
+      })
+        .populate('userId', 'name username')
+        .populate('lightId', 'title location')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit));
+
+      // Get total count for pagination
+      const total = await PrayerNote.countDocuments({
+        lightId: { $in: lightIds },
+        isPublic: true
+      });
+
+      res.status(200).json({
+        success: true,
+        data: {
+          notes: prayerNotes,
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total,
+            pages: Math.ceil(total / parseInt(limit))
+          },
+          event: {
+            _id: event._id,
+            title: event.title,
+            country: event.country
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('Error fetching event prayer notes:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch prayer notes for event',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
 }
 
 module.exports = NewsController;

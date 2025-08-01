@@ -1,24 +1,18 @@
 const express = require('express');
 const NewsController = require('../controllers/newsController');
 const { protect } = require('../middleware/authMiddleware');
-const { body, param, query, validationResult } = require('express-validator');
+const { validateRequest } = require('../middleware/zodValidation');
+const {
+  globalNewsQuerySchema,
+  countryNewsParamsSchema,
+  countryNewsQuerySchema,
+  eventsQuerySchema,
+  globeEventsQuerySchema,
+  eventNotesParamsSchema,
+  eventNotesQuerySchema
+} = require('../schemas/newsSchema');
 
 const router = express.Router();
-
-/**
- * Validation middleware for handling express-validator errors
- */
-const handleValidationErrors = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({
-      success: false,
-      message: 'Validation failed',
-      errors: errors.array()
-    });
-  }
-  next();
-};
 
 /**
  * @route   GET /api/news/global
@@ -28,17 +22,7 @@ const handleValidationErrors = (req, res, next) => {
  * @params  category (optional) - News category (default: 'general')
  */
 router.get('/global', 
-  [
-    query('limit')
-      .optional()
-      .isInt({ min: 1, max: 100 })
-      .withMessage('Limit must be between 1 and 100'),
-    query('category')
-      .optional()
-      .isIn(['general', 'world', 'nation', 'business', 'technology', 'entertainment', 'sports', 'science', 'health'])
-      .withMessage('Invalid category')
-  ],
-  handleValidationErrors,
+  validateRequest({ query: globalNewsQuerySchema }),
   NewsController.fetchGlobalNews
 );
 
@@ -51,24 +35,10 @@ router.get('/global',
  * @params  category (optional) - News category (default: 'general')
  */
 router.get('/country/:country',
-  [
-    param('country')
-      .notEmpty()
-      .trim()
-      .isLength({ min: 2, max: 50 })
-      .withMessage('Country name must be between 2 and 50 characters')
-      .matches(/^[a-zA-Z\s]+$/)
-      .withMessage('Country name can only contain letters and spaces'),
-    query('limit')
-      .optional()
-      .isInt({ min: 1, max: 100 })
-      .withMessage('Limit must be between 1 and 100'),
-    query('category')
-      .optional()
-      .isIn(['general', 'world', 'nation', 'business', 'technology', 'entertainment', 'sports', 'science', 'health'])
-      .withMessage('Invalid category')
-  ],
-  handleValidationErrors,
+  validateRequest({ 
+    params: countryNewsParamsSchema,
+    query: countryNewsQuerySchema 
+  }),
   NewsController.fetchCountryNews
 );
 
@@ -83,30 +53,7 @@ router.get('/country/:country',
  * @params  order (optional) - Sort order 'asc' or 'desc' (default: 'desc')
  */
 router.get('/events',
-  [
-    query('country')
-      .optional()
-      .trim()
-      .isLength({ min: 2, max: 50 })
-      .withMessage('Country name must be between 2 and 50 characters'),
-    query('limit')
-      .optional()
-      .isInt({ min: 1, max: 100 })
-      .withMessage('Limit must be between 1 and 100'),
-    query('page')
-      .optional()
-      .isInt({ min: 1 })
-      .withMessage('Page must be a positive integer'),
-    query('sortBy')
-      .optional()
-      .isIn(['published_at', 'priority', 'title', 'country', 'createdAt'])
-      .withMessage('Invalid sort field'),
-    query('order')
-      .optional()
-      .isIn(['asc', 'desc'])
-      .withMessage('Order must be asc or desc')
-  ],
-  handleValidationErrors,
+  validateRequest({ query: eventsQuerySchema }),
   NewsController.getStoredEvents
 );
 
@@ -146,22 +93,24 @@ router.get('/health', (req, res) => {
  * @params  hours (optional) - Time range in hours (default: 24)
  */
 router.get('/globe',
-  [
-    query('limit')
-      .optional()
-      .isInt({ min: 1, max: 500 })
-      .withMessage('Limit must be between 1 and 500'),
-    query('minPriority')
-      .optional()
-      .isInt({ min: 1, max: 10 })
-      .withMessage('Priority must be between 1 and 10'),
-    query('hours')
-      .optional()
-      .isInt({ min: 1, max: 168 })
-      .withMessage('Hours must be between 1 and 168 (7 days)')
-  ],
-  handleValidationErrors,
+  validateRequest({ query: globeEventsQuerySchema }),
   NewsController.getEventsForGlobe
+);
+
+/**
+ * @route   GET /api/v1/events/:eventId/notes
+ * @desc    Get prayer notes for a specific event
+ * @access  Public
+ * @params  eventId - Event ID (required)
+ * @params  page (optional) - Page number for pagination (default: 1)
+ * @params  limit (optional) - Number of notes per page (default: 20)
+ */
+router.get('/v1/events/:eventId/notes',
+  validateRequest({ 
+    params: eventNotesParamsSchema,
+    query: eventNotesQuerySchema 
+  }),
+  NewsController.getEventPrayerNotes
 );
 
 module.exports = router;

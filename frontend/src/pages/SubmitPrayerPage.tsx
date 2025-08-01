@@ -4,14 +4,14 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/UI';
 import { NewsEvent } from '@/types';
-import { apiService } from '@/services';
+import { apiService, CreateLightWithPrayerRequest } from '@/services';
 
 // Define the form schema for validation
 const prayerFormSchema = z.object({
   userIntent: z.string().min(5, 'Intention must be at least 5 characters').max(500, 'Intention cannot exceed 500 characters'),
   name: z.string().optional(),
   email: z.string().email('Please enter a valid email').optional(),
-  location: z.string().optional(),
+  location: z.string().min(1, 'Location is required to light your candle'),
   age: z.number().int().positive('Age must be a positive number').optional(),
 });
 
@@ -30,25 +30,19 @@ const SubmitPrayerPage: React.FC = () => {
   
   const [errors, setErrors] = useState<z.ZodIssue[]>([]);
 
-  const generatePrayerMutation = useMutation({
-    mutationFn: (data: { 
-      userIntent: string; 
-      eventId?: string;
-      name?: string;
-      email?: string;
-      location?: string;
-      age?: number;
-    }) => apiService.generatePrayer(data),
+  const createLightWithPrayerMutation = useMutation({
+    mutationFn: (data: CreateLightWithPrayerRequest) => apiService.createLightWithPrayer(data),
     onSuccess: (response) => {
       navigate('/prayer-confirmation', { 
         state: { 
-          generatedPrayer: response.data,
+          light: response.data.light,
+          prayerNote: response.data.prayerNote,
           selectedEvent 
         } 
       });
     },
     onError: (error: Error) => {
-      console.error('Error generating prayer:', error);
+      console.error('Error creating light with prayer:', error);
     },
   });
 
@@ -63,13 +57,14 @@ const SubmitPrayerPage: React.FC = () => {
       
       setErrors([]);
       
-      generatePrayerMutation.mutate({
-        userIntent: validatedData.userIntent,
-        eventId: selectedEvent?._id,
-        name: validatedData.name,
-        email: validatedData.email,
+      createLightWithPrayerMutation.mutate({
         location: validatedData.location,
-        age: validatedData.age,
+        title: validatedData.name ? `Prayer by ${validatedData.name}` : 'Anonymous Prayer',
+        description: selectedEvent ? `Prayer for: ${selectedEvent.title}` : 'Global prayer intention',
+        isAnonymous: !validatedData.name,
+        eventId: selectedEvent?._id,
+        prayerContent: validatedData.userIntent,
+        prayerIsPublic: true,
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -263,10 +258,11 @@ const SubmitPrayerPage: React.FC = () => {
                 <div>
                   <input
                     type="text"
-                    placeholder="Location (optional)"
+                    placeholder="Location (required)"
                     value={form.location}
                     onChange={(e) => setForm({ ...form, location: e.target.value })}
                     className="w-full p-3 bg-gray-800 bg-opacity-60 text-white rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none transition-colors placeholder-gray-400"
+                    required
                   />
                   {getFieldError('location') && (
                     <p className="text-red-400 text-sm mt-1">{getFieldError('location')}</p>
@@ -291,10 +287,10 @@ const SubmitPrayerPage: React.FC = () => {
               <div className="flex justify-center">
                 <Button
                   type="submit"
-                  disabled={generatePrayerMutation.isPending || !form.userIntent.trim()}
+                  disabled={createLightWithPrayerMutation.isPending || !form.userIntent.trim() || !form.location.trim()}
                   className="px-8 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold rounded-full hover:from-yellow-600 hover:to-orange-600 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {generatePrayerMutation.isPending ? (
+                  {createLightWithPrayerMutation.isPending ? (
                     <span className="flex items-center">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2"></div>
                       Lighting your candle...
@@ -306,9 +302,9 @@ const SubmitPrayerPage: React.FC = () => {
               </div>
 
               {/* Error message */}
-              {generatePrayerMutation.isError && (
+              {createLightWithPrayerMutation.isError && (
                 <p className="text-red-400 text-center mt-4">
-                  Error: {generatePrayerMutation.error?.message || 'Failed to generate prayer'}
+                  Error: {createLightWithPrayerMutation.error?.message || 'Failed to light your candle'}
                 </p>
               )}
             </form>

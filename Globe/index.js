@@ -1,3 +1,13 @@
+/**
+ * DEPRECATED: This file has been refactored and moved to frontend/src/utils/realGlobe3d.ts
+ * 
+ * All Three.js globe functionality has been consolidated into the RealGlobe3D class
+ * for better integration with the React frontend. This file is kept for reference
+ * but should not be used in new implementations.
+ * 
+ * New usage: Import { RealGlobe3D } from '@/utils' in React components
+ */
+
 import * as THREE from "three";
 import { OrbitControls } from "jsm/controls/OrbitControls.js";
 import getStarfield from "./src/getStarfield.js";
@@ -51,7 +61,8 @@ const CONFIG = {
  * Globe3D - Clean and optimized 3D globe implementation
  */
 class Globe3D {
-  constructor() {
+  // Modified constructor to accept a containerElement
+  constructor(containerElement = document.body) {
     this.scene = null;
     this.camera = null;
     this.renderer = null;
@@ -59,6 +70,9 @@ class Globe3D {
     this.globeGroup = null;
     this.goldenCore = null;
     this.animationId = null;
+    
+    // Store the provided container element
+    this.containerElement = containerElement; 
     
     // Event markers system
     this.eventMarkers = new Map();
@@ -113,7 +127,8 @@ class Globe3D {
   createCamera() {
     this.camera = new THREE.PerspectiveCamera(
       CONFIG.CAMERA.fov,
-      window.innerWidth / window.innerHeight,
+      // Adjust aspect ratio based on the container size, not window size
+      this.containerElement.clientWidth / this.containerElement.clientHeight,
       CONFIG.CAMERA.near,
       CONFIG.CAMERA.far
     );
@@ -125,22 +140,22 @@ class Globe3D {
    */
   createRenderer() {
     this.renderer = new THREE.WebGLRenderer(CONFIG.RENDERER);
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    // Set size based on the container, not window
+    this.renderer.setSize(this.containerElement.clientWidth, this.containerElement.clientHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap pixel ratio
     
-    // Enable sorting for better transparency handling
     this.renderer.sortObjects = true;
+    this.renderer.shadowMap.enabled = false; 
     
-    // Improve depth testing for better blending
-    this.renderer.shadowMap.enabled = false; // Disable shadows for better performance
-    
-    document.body.appendChild(this.renderer.domElement);
+    // Append to the provided containerElement
+    this.containerElement.appendChild(this.renderer.domElement); 
   }
 
   /**
    * Create orbit controls
    */
   createControls() {
+    // Ensure controls are tied to the renderer's DOM element that's in the container
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
@@ -748,12 +763,14 @@ class Globe3D {
    * Setup event listeners
    */
   setupEventListeners() {
+    // Modified to use the containerElement's clientWidth/Height and events on its canvas
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
     
     // Add visibility change listener to pause/resume animation
     document.addEventListener('visibilitychange', this.onVisibilityChange.bind(this));
     
     // Mouse move listener for marker interaction
+    // Use the renderer's domElement which is now appended to the container
     this.renderer.domElement.addEventListener('mousemove', this.onMouseMove.bind(this));
     this.renderer.domElement.addEventListener('mouseleave', this.onMouseLeave.bind(this));
     this.renderer.domElement.addEventListener('click', this.onMouseClick.bind(this));
@@ -763,9 +780,12 @@ class Globe3D {
    * Handle window resize
    */
   onWindowResize() {
-    this.camera.aspect = window.innerWidth / window.innerHeight;
+    // Use containerElement dimensions for camera aspect and renderer size
+    const width = this.containerElement.clientWidth;
+    const height = this.containerElement.clientHeight;
+    this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setSize(width, height);
   }
 
   /**
@@ -802,9 +822,10 @@ class Globe3D {
    * Handle mouse move for marker interaction
    */
   onMouseMove(event) {
-    // Calculate mouse position in normalized device coordinates (-1 to +1)
-    this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    // Calculate mouse position relative to the canvas
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     
     // Update raycaster
     this.raycaster.setFromCamera(this.mouse, this.camera);
@@ -834,7 +855,7 @@ class Globe3D {
         this.triggerEvent('markerHover', this.hoveredMarker.userData.eventData);
         
         // Change cursor
-        document.body.style.cursor = 'pointer';
+        this.containerElement.style.cursor = 'pointer'; // Apply cursor change to the container
       }
     } else {
       // No intersection, reset hover state
@@ -843,7 +864,7 @@ class Globe3D {
         this.hoveredMarker.userData.isHovered = false;
         this.triggerEvent('markerLeave', this.hoveredMarker.userData.eventData);
         this.hoveredMarker = null;
-        document.body.style.cursor = 'default';
+        this.containerElement.style.cursor = 'default'; // Reset cursor on container
       }
     }
   }
@@ -870,7 +891,7 @@ class Globe3D {
       this.hoveredMarker.userData.isHovered = false;
       this.triggerEvent('markerLeave', this.hoveredMarker.userData.eventData);
       this.hoveredMarker = null;
-      document.body.style.cursor = 'default';
+      this.containerElement.style.cursor = 'default'; // Reset cursor on container
     }
   }
 
@@ -924,32 +945,17 @@ class Globe3D {
     
     // Update beautiful golden marker animations with subtle pulsing
     this.eventMarkers.forEach(markerGroup => {
-      if (markerGroup.userData && markerGroup.userData.mainMarker && markerGroup.userData.glowLayers) {
-        const { mainMarker, glowLayers, eventData, originalOpacities } = markerGroup.userData;
-        
-        // Create very subtle pulsing effect
+      // Check if mainMarker and glowLayers exist on userData
+      // The original code was simplified for marker creation, so this part might need adjustment
+      // if you add complex glow layers later as per the commented-out old implementation.
+      // For now, assuming markers are just simple meshes, we can simplify this update:
+      if (markerGroup.userData && markerGroup.material && markerGroup.material.emissive) {
+        const { eventData } = markerGroup.userData;
         const pulseIntensity = 0.85 + 0.15 * Math.sin(currentTime * CONFIG.MARKERS.pulseSpeed + eventData.id * 0.1);
-        const glowPulse = 0.7 + 0.3 * Math.sin(currentTime * CONFIG.MARKERS.pulseSpeed * 0.8 + eventData.id * 0.2);
-        
-        // Apply gentle pulsing to emissive intensity and opacity
         const isHighPriority = eventData.priority >= 7;
-        const baseIntensity = isHighPriority ? 0.7 : 0.4;
-        
-        // Pulse the main marker
-        mainMarker.material.emissiveIntensity = baseIntensity * pulseIntensity;
-        mainMarker.material.opacity = originalOpacities.main * pulseIntensity;
-        
-        // Pulse the glow layers with different phases for depth
-        glowLayers.forEach((glow, index) => {
-          const phaseOffset = index * 0.3;
-          const layerPulse = 0.6 + 0.4 * Math.sin(currentTime * CONFIG.MARKERS.pulseSpeed * 0.6 + eventData.id * 0.15 + phaseOffset);
-          
-          if (index === 0) { // Inner glow
-            glow.material.opacity = originalOpacities.innerGlow * layerPulse;
-          } else { // Outer glow
-            glow.material.opacity = originalOpacities.outerGlow * layerPulse * 0.8;
-          }
-        });
+        const baseIntensity = isHighPriority ? 1.0 : 0.8; // Use original emissiveIntensity
+        markerGroup.material.emissiveIntensity = baseIntensity * pulseIntensity;
+        // If you were using opacity for pulsing, re-enable/adjust here
       }
     });
     
@@ -1003,6 +1009,11 @@ class Globe3D {
     // Clear event markers
     this.clearEventMarkers();
     
+    // Remove the canvas element from the DOM
+    if (this.renderer && this.renderer.domElement && this.renderer.domElement.parentNode) {
+      this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+    }
+
     // Dispose geometries and materials
     this.scene.traverse((object) => {
       if (object.geometry) object.geometry.dispose();
@@ -1024,27 +1035,19 @@ class Globe3D {
     // Remove event listeners
     window.removeEventListener('resize', this.onWindowResize.bind(this));
     document.removeEventListener('visibilitychange', this.onVisibilityChange.bind(this));
-    this.renderer.domElement.removeEventListener('mousemove', this.onMouseMove.bind(this));
-    this.renderer.domElement.removeEventListener('mouseleave', this.onMouseLeave.bind(this));
-    this.renderer.domElement.removeEventListener('click', this.onMouseClick.bind(this));
+    // Remove listeners from the specific DOM element
+    if (this.renderer && this.renderer.domElement) {
+      this.renderer.domElement.removeEventListener('mousemove', this.onMouseMove.bind(this));
+      this.renderer.domElement.removeEventListener('mouseleave', this.onMouseLeave.bind(this));
+      this.renderer.domElement.removeEventListener('click', this.onMouseClick.bind(this));
+    }
   }
   
   /**
-   * Clean up resources
+   * Clean up resources (alias for dispose for clarity in some contexts)
    */
   destroy() {
-    this.stopAutoRefresh();
-    
-    if (this.animationId) {
-      cancelAnimationFrame(this.animationId);
-    }
-    
-    if (this.renderer) {
-      this.renderer.dispose();
-    }
-    
-    this.clearEventMarkers();
-    
+    this.dispose();
     console.log('Globe3D destroyed');
   }
 
@@ -1073,231 +1076,91 @@ class Globe3D {
 
 }
 
-// Initialize the globe
-const globe = new Globe3D();
+// Remove the direct initialization of the globe and related window functions.
+// This file will now export the Globe3D class and the initializeGlobe function.
+// The React component will then be responsible for initializing it.
+// const globe = new Globe3D(); // REMOVED
+// window.globe = globe; // REMOVED
+// window.debugMarkers = () => globe.debugMarkerVisibility(); // REMOVED
+// window.closeEventModal = closeEventModal; // REMOVED
+// window.closePrayerModal = closePrayerModal; // REMOVED
+// window.copyPrayer = copyPrayer; // REMOVED
+// window.generatePrayerForEvent = generatePrayerForEvent; // REMOVED
 
-// Make globe available globally for controls
-window.globe = globe;
+// Instead, export the Globe3D class and a function to initialize it.
+export function initializeGlobe(containerElement) {
+    const globeInstance = new Globe3D(containerElement);
+    // You can still expose it to window.globe for debugging if needed, but it's optional.
+    window.globe = globeInstance; 
+    
+    // It's important that the showEventModal, showEventTooltip, generatePrayerForEvent
+    // and related utility functions are either moved to the React component scope
+    // or passed as callbacks to the Globe3D instance if they need to be triggered by Globe3D.
+    // For now, these direct `window.` assignments for modals are removed from here.
+    // The React component will handle modal display.
 
-// Make debug function available globally
-window.debugMarkers = () => globe.debugMarkerVisibility();
+    return globeInstance;
+}
 
-// Example event handlers for marker interactions
-globe.addEventListener('markerClick', (eventData) => {
-  console.log('Marker clicked:', eventData);
-  
-  // Create and show event details modal
-  showEventModal(eventData);
-});
+// Export Globe3D class itself if you want to use it directly
+export { Globe3D }; 
 
-globe.addEventListener('markerHover', (eventData) => {
-  console.log('Marker hovered:', eventData);
-  
-  // Show tooltip with event info
-  showEventTooltip(eventData);
-});
+// The helper functions for modals/tooltips (`showEventModal`, `showEventTooltip`, etc.)
+// are currently defined at the global scope in the original `index.js`.
+// In a React environment, these should typically be managed by your React components.
+// For now, they are left as-is, but you should move them into your React `GlobePage`
+// or a dedicated modal/tooltip component/hook within your `frontend/src` structure.
+// This ensures they interact with React state and rendering.
+// Functions like `getPriorityColor`, `getTimeAgo` can be moved to `frontend/src/utils`.
 
-globe.addEventListener('markerLeave', (eventData) => {
-  // Hide tooltip
-  hideEventTooltip();
-});
-
+// Re-defining (or assuming these will be moved) these helper functions:
 /**
- * Show event details in a modal
+ * Show event details in a modal (THIS SHOULD BE A REACT COMPONENT/MODAL)
  */
 function showEventModal(eventData) {
-  // Create modal HTML with enhanced features
-  const modalHTML = `
-    <div id="eventModal" style="
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(10, 24, 27, 0.95);
-      border: 2px solid #FFD700;
-      border-radius: 15px;
-      padding: 25px;
-      max-width: 550px;
-      width: 90%;
-      z-index: 1000;
-      color: white;
-      font-family: Arial, sans-serif;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 10px 30px rgba(255,215,0,0.3);
-    ">
-      <!-- Header -->
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
-        <div style="flex: 1; margin-right: 10px;">
-          <h3 style="margin: 0 0 5px 0; color: #FFD700; font-size: 18px; line-height: 1.3;">${eventData.title}</h3>
-          <div style="font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">
-            ${new Date(eventData.publishedAt).toLocaleDateString()} • ${eventData.country}
-          </div>
-        </div>
-        <button onclick="closeEventModal()" style="
-          background: none;
-          border: none;
-          color: #FFD700;
-          font-size: 24px;
-          cursor: pointer;
-          padding: 5px;
-          line-height: 1;
-          border-radius: 50%;
-          transition: background-color 0.2s;
-        " onmouseover="this.style.backgroundColor='rgba(255,215,0,0.1)'" onmouseout="this.style.backgroundColor='transparent'">&times;</button>
-      </div>
-      
-      <!-- Priority indicator -->
-      <div style="margin-bottom: 15px;">
-        <div style="display: inline-block; background: ${getPriorityColor(eventData.priority)}; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
-          Priority ${eventData.priority}/10
-        </div>
-      </div>
-      
-      <!-- Content -->
-      <div style="margin-bottom: 20px;">
-        <p style="margin: 0 0 15px 0; line-height: 1.5; color: #e0e0e0;">${eventData.description}</p>
-        <div style="display: flex; flex-wrap: wrap; gap: 15px; font-size: 12px; color: #bbb; padding: 10px 0; border-top: 1px solid rgba(255,215,0,0.2);">
-          <span><strong>📍 Location:</strong> ${eventData.country}</span>
-          <span><strong>📰 Source:</strong> ${eventData.source}</span>
-          <span><strong>🕒 Published:</strong> ${getTimeAgo(eventData.publishedAt)}</span>
-        </div>
-      </div>
-      
-      <!-- Action buttons -->
-      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <button onclick="generatePrayerForEvent('${eventData.id}', '${eventData.title.replace(/'/g, "\\'")}', '${eventData.country}')" style="
-          flex: 1;
-          min-width: 120px;
-          background: linear-gradient(45deg, #4CAF50, #45a049);
-          color: white;
-          border: none;
-          padding: 12px 20px;
-          border-radius: 25px;
-          font-weight: bold;
-          cursor: pointer;
-          transition: all 0.3s;
-          font-size: 14px;
-        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 5px 15px rgba(76,175,80,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-          🙏 Generate Prayer
-        </button>
-        <a href="${eventData.url}" target="_blank" style="
-          flex: 1;
-          min-width: 120px;
-          display: inline-block;
-          background: linear-gradient(45deg, #FFD700, #FFA500);
-          color: #000;
-          text-decoration: none;
-          padding: 12px 20px;
-          border-radius: 25px;
-          font-weight: bold;
-          transition: all 0.3s;
-          text-align: center;
-          font-size: 14px;
-        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 5px 15px rgba(255,215,0,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-          📖 Read Article
-        </a>
-      </div>
-    </div>
-    
-    <div id="eventModalBackdrop" style="
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.7);
-      z-index: 999;
-      backdrop-filter: blur(3px);
-    " onclick="closeEventModal()"></div>
-  `;
-  
-  // Remove existing modal if any
-  closeEventModal();
-  
-  // Add modal to page
-  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  console.warn('showEventModal called from Globe. This function should be handled by React component.');
+  // This content should be moved into your React NewsModal component.
+  // The Globe component will only *trigger* a callback (e.g., `onMarkerClick`)
+  // and the React component will then render the modal.
 }
 
 /**
- * Close event details modal
+ * Close event details modal (THIS SHOULD BE HANDLED BY REACT)
  */
 function closeEventModal() {
-  const modal = document.getElementById('eventModal');
-  const backdrop = document.getElementById('eventModalBackdrop');
-  
-  if (modal) modal.remove();
-  if (backdrop) backdrop.remove();
+  console.warn('closeEventModal called from Globe. This function should be handled by React component.');
+  // This content should be moved into your React NewsModal component.
 }
 
 /**
- * Show event tooltip
+ * Show event tooltip (THIS SHOULD BE A REACT COMPONENT/TOOLTIP)
  */
 function showEventTooltip(eventData) {
-  // Remove existing tooltip
-  hideEventTooltip();
-  
-  const tooltip = document.createElement('div');
-  tooltip.id = 'eventTooltip';
-  tooltip.style.cssText = `
-    position: fixed;
-    background: rgba(10, 24, 27, 0.95);
-    border: 2px solid #FFD700;
-    border-radius: 10px;
-    padding: 12px;
-    color: white;
-    font-family: Arial, sans-serif;
-    font-size: 12px;
-    z-index: 1000;
-    pointer-events: none;
-    max-width: 280px;
-    backdrop-filter: blur(8px);
-    box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
-  `;
-  
-  tooltip.innerHTML = `
-    <div style="color: #FFD700; font-weight: bold; margin-bottom: 8px; font-size: 13px;">${eventData.title}</div>
-    <div style="margin-bottom: 8px; color: #e0e0e0; line-height: 1.4;">${eventData.description.substring(0, 100)}${eventData.description.length > 100 ? '...' : ''}</div>
-    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 11px;">
-      <span style="color: #ccc;">📍 ${eventData.country}</span>
-      <span style="color: ${getPriorityColor(eventData.priority)}; font-weight: bold;">Priority: ${eventData.priority}/10</span>
-    </div>
-    <div style="font-size: 10px; color: #888; text-align: center; padding-top: 6px; border-top: 1px solid rgba(255,215,0,0.2);">
-      🕒 ${getTimeAgo(eventData.publishedAt)} • Click for details
-    </div>
-  `;
-  
-  document.body.appendChild(tooltip);
-  
-  // Position tooltip near mouse
-  document.addEventListener('mousemove', updateTooltipPosition);
+  console.warn('showEventTooltip called from Globe. This function should be handled by React component.');
+  // This content should be moved into your React NewsMarker/Tooltip component.
 }
 
 /**
- * Hide event tooltip
+ * Hide event tooltip (THIS SHOULD BE HANDLED BY REACT)
  */
 function hideEventTooltip() {
-  const tooltip = document.getElementById('eventTooltip');
-  if (tooltip) {
-    tooltip.remove();
-    document.removeEventListener('mousemove', updateTooltipPosition);
-  }
+  console.warn('hideEventTooltip called from Globe. This function should be handled by React component.');
+  // This content should be moved into your React NewsMarker/Tooltip component.
 }
 
 /**
- * Update tooltip position
+ * Update tooltip position (THIS SHOULD BE HANDLED BY REACT)
  */
 function updateTooltipPosition(event) {
-  const tooltip = document.getElementById('eventTooltip');
-  if (tooltip) {
-    tooltip.style.left = (event.clientX + 10) + 'px';
-    tooltip.style.top = (event.clientY - 10) + 'px';
-  }
+  console.warn('updateTooltipPosition called from Globe. This function should be handled by React component.');
+  // This content should be moved into your React NewsMarker/Tooltip component.
 }
 
 /**
- * Get priority color based on priority level
+ * Get priority color based on priority level (Move to frontend/src/utils)
  */
 function getPriorityColor(priority) {
+  console.warn('getPriorityColor called from Globe. Move this to frontend/src/utils.');
   if (priority >= 8) return '#ff4444'; // High priority - red
   if (priority >= 6) return '#ffaa00'; // Medium priority - orange  
   if (priority >= 4) return '#ffdd00'; // Medium-low priority - yellow
@@ -1305,9 +1168,10 @@ function getPriorityColor(priority) {
 }
 
 /**
- * Get human-readable time ago
+ * Get human-readable time ago (Move to frontend/src/utils)
  */
 function getTimeAgo(dateString) {
+  console.warn('getTimeAgo called from Globe. Move this to frontend/src/utils.');
   const now = new Date();
   const published = new Date(dateString);
   const diffInMinutes = Math.floor((now - published) / (1000 * 60));
@@ -1326,158 +1190,23 @@ function getTimeAgo(dateString) {
 }
 
 /**
- * Generate prayer for selected event
+ * Generate prayer for selected event (THIS SHOULD BE HANDLED BY REACT)
  */
 function generatePrayerForEvent(eventId, eventTitle, country) {
-  console.log(`Generating prayer for event: ${eventTitle} in ${country}`);
-  
-  // Close the modal first
-  closeEventModal();
-  
-  // Create prayer generation popup
-  const prayerHTML = `
-    <div id="prayerModal" style="
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(10, 24, 27, 0.95);
-      border: 2px solid #4CAF50;
-      border-radius: 15px;
-      padding: 25px;
-      max-width: 500px;
-      width: 90%;
-      z-index: 1000;
-      color: white;
-      font-family: Arial, sans-serif;
-      backdrop-filter: blur(10px);
-      text-align: center;
-    ">
-      <div style="margin-bottom: 20px;">
-        <div style="font-size: 48px; margin-bottom: 10px;">🙏</div>
-        <h3 style="margin: 0 0 10px 0; color: #4CAF50;">Prayer Generation</h3>
-        <p style="margin: 0; color: #ccc; font-size: 14px;">Generating a personalized prayer for this event...</p>
-      </div>
-      
-      <div style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px;">
-        <strong style="color: #FFD700;">Event:</strong> ${eventTitle}<br>
-        <strong style="color: #FFD700;">Location:</strong> ${country}
-      </div>
-      
-      <div style="margin-bottom: 20px;">
-        <div style="display: inline-block; width: 30px; height: 30px; border: 3px solid #4CAF50; border-top: 3px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-      </div>
-      
-      <button onclick="closePrayerModal()" style="
-        background: #4CAF50;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 20px;
-        cursor: pointer;
-        font-weight: bold;
-      ">Close</button>
-    </div>
-    
-    <div id="prayerModalBackdrop" style="
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.7);
-      z-index: 999;
-    " onclick="closePrayerModal()"></div>
-    
-    <style>
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-    </style>
-  `;
-  
-  document.body.insertAdjacentHTML('beforeend', prayerHTML);
-  
-  // Simulate prayer generation (replace with actual API call)
-  setTimeout(() => {
-    document.getElementById('prayerModal').innerHTML = `
-      <div style="margin-bottom: 20px;">
-        <div style="font-size: 48px; margin-bottom: 10px;">✨</div>
-        <h3 style="margin: 0 0 15px 0; color: #4CAF50;">Prayer Generated</h3>
-      </div>
-      
-      <div style="margin-bottom: 20px; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 10px; text-align: left;">
-        <p style="margin: 0; line-height: 1.6; color: #e0e0e0; font-style: italic;">
-          "Heavenly Father, we come before you with heavy hearts as we lift up the situation in ${country}. 
-          We pray for peace, healing, and comfort for all those affected by these events. 
-          Grant wisdom to leaders, strength to the suffering, and hope to communities in need. 
-          May your love and grace shine through these difficult times. Amen."
-        </p>
-      </div>
-      
-      <div style="display: flex; gap: 10px; justify-content: center;">
-        <button onclick="copyPrayer()" style="
-          background: #FFD700;
-          color: #000;
-          border: none;
-          padding: 10px 15px;
-          border-radius: 20px;
-          cursor: pointer;
-          font-weight: bold;
-          font-size: 12px;
-        ">📋 Copy Prayer</button>
-        <button onclick="closePrayerModal()" style="
-          background: #4CAF50;
-          color: white;
-          border: none;
-          padding: 10px 15px;
-          border-radius: 20px;
-          cursor: pointer;
-          font-weight: bold;
-          font-size: 12px;
-        ">Close</button>
-      </div>
-    `;
-  }, 2000);
+  console.warn('generatePrayerForEvent called from Globe. This function should be handled by React component.');
+  // This logic (simulating modal display) should be handled by React.
 }
 
 /**
- * Close prayer modal
+ * Close prayer modal (THIS SHOULD BE HANDLED BY REACT)
  */
 function closePrayerModal() {
-  const modal = document.getElementById('prayerModal');
-  const backdrop = document.getElementById('prayerModalBackdrop');
-  if (modal) modal.remove();
-  if (backdrop) backdrop.remove();
+  console.warn('closePrayerModal called from Globe. This function should be handled by React component.');
 }
 
 /**
- * Copy prayer to clipboard
+ * Copy prayer to clipboard (THIS SHOULD BE HANDLED BY REACT)
  */
 function copyPrayer() {
-  const prayerText = document.querySelector('#prayerModal p').textContent;
-  navigator.clipboard.writeText(prayerText).then(() => {
-    // Show success feedback
-    const button = event.target;
-    const originalText = button.textContent;
-    button.textContent = '✅ Copied!';
-    button.style.background = '#4CAF50';
-    button.style.color = 'white';
-    setTimeout(() => {
-      button.textContent = originalText;
-      button.style.background = '#FFD700';
-      button.style.color = '#000';
-    }, 2000);
-  });
+  console.warn('copyPrayer called from Globe. This function should be handled by React component.');
 }
-
-// Export for external use
-window.Globe3D = Globe3D;
-window.globe = globe;
-
-// Add modal functions to window for onclick handlers
-window.closeEventModal = closeEventModal;
-window.closePrayerModal = closePrayerModal;
-window.copyPrayer = copyPrayer;
-window.generatePrayerForEvent = generatePrayerForEvent;

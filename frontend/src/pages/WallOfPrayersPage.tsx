@@ -53,7 +53,7 @@ const WallOfPrayersPage: React.FC = () => {
   const [filter, setFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const { data: prayersData, isLoading, error } = usePrayerHistory(1, 20, filter === 'All' ? undefined : filter);
+  const { data: prayersData, isLoading, error } = usePrayerHistory(1, 20, filter === 'All' ? undefined : filter, searchQuery);
 
   const handlePrayerClick = (prayer: GeneratedPrayer) => {
     setSelectedPrayer(prayer);

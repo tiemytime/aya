@@ -91,26 +91,31 @@ describe('SubmitPrayerPage', () => {
     expect(submitButton).toBeDisabled();
   });
 
-  it('enables submit button when intention is provided', () => {
+  it('enables submit button when intention and location are provided', () => {
     renderSubmitPrayerPage();
     
     const textarea = screen.getByPlaceholderText('Your prayer intention...');
+    const locationInput = screen.getByPlaceholderText('Location (required)');
     const submitButton = screen.getByText('Light your candle');
     
     // Initially disabled
     expect(submitButton).toBeDisabled();
     
-    // Should be enabled after typing
+    // Should still be disabled with only intention
     fireEvent.change(textarea, { target: { value: 'My prayer intention' } });
+    expect(submitButton).toBeDisabled();
+    
+    // Should be enabled after providing both intention and location
+    fireEvent.change(locationInput, { target: { value: 'New York, USA' } });
     expect(submitButton).not.toBeDisabled();
   });
 
-  it('renders optional form fields', () => {
+  it('renders optional and required form fields', () => {
     renderSubmitPrayerPage();
     
     expect(screen.getByPlaceholderText('Name (optional)')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Email (optional)')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Location (optional)')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Location (required)')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Age (optional)')).toBeInTheDocument();
   });
 

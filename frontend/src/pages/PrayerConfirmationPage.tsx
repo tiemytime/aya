@@ -4,9 +4,16 @@ import { GeneratedPrayer } from '../types/ai';
 import { NewsEvent } from '../types';
 import { PrayerAudioPlayer } from '../components/Audio';
 import { Button } from '../components/UI';
+import { Light, PrayerNoteWithLight } from '@/services';
 
 interface GeneratedPrayerState {
   generatedPrayer: GeneratedPrayer;
+  selectedEvent?: NewsEvent;
+}
+
+interface LightWithPrayerState {
+  light: Light;
+  prayerNote: PrayerNoteWithLight;
   selectedEvent?: NewsEvent;
 }
 
@@ -14,22 +21,30 @@ const PrayerConfirmationPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  const state = location.state as GeneratedPrayerState | null;
-  const generatedPrayer = state?.generatedPrayer;
+  const state = location.state as (GeneratedPrayerState | LightWithPrayerState) | null;
+  
+  // Handle both old prayer generation flow and new light creation flow
+  const generatedPrayer = (state as GeneratedPrayerState)?.generatedPrayer;
+  const light = (state as LightWithPrayerState)?.light;
+  const prayerNote = (state as LightWithPrayerState)?.prayerNote;
   const selectedEvent = state?.selectedEvent;
 
-  if (!generatedPrayer) {
+  // Determine which flow we're using and extract prayer content
+  const prayerContent = generatedPrayer?.generatedText || prayerNote?.content;
+  const isLightFlow = !!light && !!prayerNote;
+
+  if (!prayerContent) {
     return (
       <div className="relative w-screen h-screen flex items-center justify-center bg-gradient-to-b from-black via-gray-900 to-black text-white">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">No Prayer Found</h2>
-          <p className="text-gray-400 mb-6">Please generate a prayer first.</p>
+          <p className="text-gray-400 mb-6">Please create a prayer first.</p>
           <Button
             onClick={() => navigate('/submit-prayer')}
             variant="gradient-gold"
             className="px-6 py-3"
           >
-            Generate Prayer
+            Create Prayer
           </Button>
         </div>
       </div>
@@ -45,12 +60,12 @@ const PrayerConfirmationPage: React.FC = () => {
       if (navigator.share) {
         await navigator.share({
           title: 'My Prayer from AYA',
-          text: `"${generatedPrayer.generatedText}" - Generated through AYA's global prayer network`,
+          text: `"${prayerContent}" - ${isLightFlow ? 'My light is now shining on' : 'Generated through'} AYA's global prayer network`,
           url: window.location.origin + '/globe',
         });
       } else {
         // Fallback to copying to clipboard
-        await navigator.clipboard.writeText(generatedPrayer.generatedText);
+        await navigator.clipboard.writeText(prayerContent);
         alert('Prayer copied to clipboard!');
       }
     } catch (error) {
@@ -133,20 +148,34 @@ const PrayerConfirmationPage: React.FC = () => {
 
             {/* Generated Prayer Text */}
             <div className="mb-6 p-6 bg-gray-800 bg-opacity-60 rounded-lg border border-gray-600">
-              <h4 className="text-yellow-400 font-semibold mb-3">Generated Prayer</h4>
+              <h4 className="text-yellow-400 font-semibold mb-3">
+                {isLightFlow ? 'Your Prayer Light' : 'Generated Prayer'}
+              </h4>
               <p className="text-white text-lg italic leading-relaxed">
-                "{generatedPrayer.generatedText}"
+                "{prayerContent}"
               </p>
               
               {/* Prayer Details */}
               <div className="mt-4 pt-4 border-t border-gray-600">
                 <div className="text-sm text-gray-400">
-                  <p><strong>Intent:</strong> {generatedPrayer.userIntent}</p>
-                  {generatedPrayer.theme && (
-                    <p><strong>Theme:</strong> {generatedPrayer.theme}</p>
+                  {generatedPrayer && (
+                    <>
+                      <p><strong>Intent:</strong> {generatedPrayer.userIntent}</p>
+                      {generatedPrayer.theme && (
+                        <p><strong>Theme:</strong> {generatedPrayer.theme}</p>
+                      )}
+                      <p><strong>Language:</strong> {generatedPrayer.language}</p>
+                      <p><strong>Length:</strong> {generatedPrayer.length}</p>
+                    </>
                   )}
-                  <p><strong>Language:</strong> {generatedPrayer.language}</p>
-                  <p><strong>Length:</strong> {generatedPrayer.length}</p>
+                  {light && (
+                    <>
+                      <p><strong>Location:</strong> {light.location}</p>
+                      <p><strong>Light ID:</strong> {light._id}</p>
+                      <p><strong>Status:</strong> {light.status}</p>
+                      <p><strong>Created:</strong> {new Date(light.createdAt).toLocaleString()}</p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -163,7 +192,10 @@ const PrayerConfirmationPage: React.FC = () => {
             {/* Thank You Message */}
             <p className="text-gray-300 text-sm mb-6">
               <strong>Thank you for spreading your light.</strong><br/>
-              Your little candle can light up a room full of darkness.
+              {isLightFlow 
+                ? 'Your prayer light is now shining on the global map, bringing hope to the world.'
+                : 'Your little candle can light up a room full of darkness.'
+              }
             </p>
 
             {/* Action Button */}
@@ -180,7 +212,7 @@ const PrayerConfirmationPage: React.FC = () => {
           <div className="w-1/2 p-8 flex flex-col items-center justify-center bg-gray-900 bg-opacity-30">
             {/* Audio Player Section */}
             <div className="w-full max-w-sm mb-8">
-              {generatedPrayer.audioGenerated && generatedPrayer.s3FileUrl ? (
+              {generatedPrayer?.audioGenerated && generatedPrayer?.s3FileUrl ? (
                 <PrayerAudioPlayer 
                   audioUrl={generatedPrayer.s3FileUrl} 
                   title="Your Generated Prayer"
@@ -188,21 +220,28 @@ const PrayerConfirmationPage: React.FC = () => {
                 />
               ) : (
                 <div className="text-center p-6 bg-gray-800 bg-opacity-60 rounded-lg border border-gray-600">
-                  <div className="text-4xl mb-3">🎧</div>
-                  <p className="text-white font-semibold mb-2">Audio Not Generated</p>
-                  <p className="text-gray-400 text-sm mb-4">
-                    Audio generation was not enabled for this prayer
+                  <div className="text-4xl mb-3">🕯️</div>
+                  <p className="text-white font-semibold mb-2">
+                    {isLightFlow ? 'Your Light is Shining' : 'Audio Not Generated'}
                   </p>
-                  <Button
-                    onClick={() => {
-                      // Could implement re-generation with audio
-                      alert('Audio generation feature coming soon!');
-                    }}
-                    variant="secondary"
-                    className="text-sm px-4 py-2"
-                  >
-                    Generate Audio
-                  </Button>
+                  <p className="text-gray-400 text-sm mb-4">
+                    {isLightFlow 
+                      ? 'Your prayer light has been placed on the global map and is visible to others'
+                      : 'Audio generation was not enabled for this prayer'
+                    }
+                  </p>
+                  {!isLightFlow && (
+                    <Button
+                      onClick={() => {
+                        // Could implement re-generation with audio
+                        alert('Audio generation feature coming soon!');
+                      }}
+                      variant="secondary"
+                      className="text-sm px-4 py-2"
+                    >
+                      Generate Audio
+                    </Button>
+                  )}
                 </div>
               )}
             </div>

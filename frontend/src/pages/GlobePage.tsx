@@ -1,9 +1,11 @@
 import React, { useState, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useNewsEvents } from '@/hooks';
 import { NewsEvent } from '@/types';
 import { getTimeAgo, getPriorityColor } from '@/utils';
 import { Button, AudioPlayer, LoadingSpinner } from '@/components/UI';
+import { apiService, PrayerNote } from '@/services';
 
 // Lazy load the Globe3D component for better initial page load performance
 const LazyGlobe3D = lazy(() => import('@/components/Globe/Globe3D'));
@@ -18,6 +20,20 @@ const GlobePage: React.FC = () => {
   const navigate = useNavigate();
   const [selectedEvent, setSelectedEvent] = useState<NewsEvent | null>(null);
   const [isPanelExpanded, setIsPanelExpanded] = useState(false);
+
+  // Query for prayer notes when an event is selected
+  const { 
+    data: prayerNotesData, 
+    isLoading: isLoadingNotes, 
+    error: notesError 
+  } = useQuery({
+    queryKey: ['eventPrayerNotes', selectedEvent?._id],
+    queryFn: () => selectedEvent ? apiService.getEventPrayerNotes(selectedEvent._id) : Promise.resolve(null),
+    enabled: !!selectedEvent,
+    staleTime: 30000, // Cache for 30 seconds
+  });
+
+  const prayerNotes = prayerNotesData?.data?.notes || [];
 
   // Handle marker click events
   const handleMarkerClick = useCallback((event: NewsEvent) => {
@@ -93,89 +109,157 @@ const GlobePage: React.FC = () => {
         absolute top-0 left-0 h-full w-96 bg-gray-900 bg-opacity-95 backdrop-blur-md
         transform transition-transform duration-300 ease-in-out z-20
         ${isPanelExpanded ? 'translate-x-0' : '-translate-x-full'}
-        border-r border-gray-700
+        border-r border-gray-700 flex flex-col
       `}>
         {selectedEvent && (
-          <div className="p-6 h-full overflow-y-auto">
-            <button
-              onClick={() => setIsPanelExpanded(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+          <>
+            {/* Header with close button */}
+            <div className="p-6 border-b border-gray-700">
+              <button
+                onClick={() => setIsPanelExpanded(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
 
-            <div className="mt-8">
-              <div className="flex items-center mb-4">
-                <div 
-                  className="w-3 h-3 rounded-full mr-2"
-                  style={{ backgroundColor: getPriorityColor(selectedEvent.priority) }}
-                />
-                <span className="text-sm text-gray-400 uppercase tracking-wider">
-                  {selectedEvent.country}
-                </span>
-              </div>
-
-              <h2 className="text-xl font-bold text-white mb-4 leading-tight">
-                {selectedEvent.title}
-              </h2>
-
-              <p className="text-gray-300 mb-6 leading-relaxed">
-                {selectedEvent.description}
-              </p>
-
-              <div className="space-y-4 mb-8">
-                <div className="flex items-center text-sm text-gray-400">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {getTimeAgo(selectedEvent.published_at)}
+              <div className="mt-8">
+                <div className="flex items-center mb-4">
+                  <div 
+                    className="w-3 h-3 rounded-full mr-2"
+                    style={{ backgroundColor: getPriorityColor(selectedEvent.priority) }}
+                  />
+                  <span className="text-sm text-gray-400 uppercase tracking-wider">
+                    {selectedEvent.country}
+                  </span>
                 </div>
 
-                <div className="flex items-center text-sm text-gray-400">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                  </svg>
-                  {selectedEvent.source}
+                <h2 className="text-xl font-bold text-white mb-4 leading-tight">
+                  {selectedEvent.title}
+                </h2>
+
+                <p className="text-gray-300 mb-4 leading-relaxed">
+                  {selectedEvent.description}
+                </p>
+
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center text-sm text-gray-400">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {getTimeAgo(selectedEvent.published_at)}
+                  </div>
+
+                  <div className="flex items-center text-sm text-gray-400">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                    </svg>
+                    {selectedEvent.source}
+                  </div>
+
+                  <div className="flex items-center text-sm text-gray-400">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Priority: {selectedEvent.priority}/10
+                  </div>
                 </div>
 
-                <div className="flex items-center text-sm text-gray-400">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Priority: {selectedEvent.priority}/10
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <Button
-                  onClick={handleJoinPrayer}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium"
-                >
-                  🙏 Join Prayer Circle
-                </Button>
-
-                <Button
-                  onClick={handleShareEvent}
-                  className="w-full bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg font-medium"
-                >
-                  📤 Share Event
-                </Button>
-
-                {selectedEvent.url && (
-                  <a
-                    href={selectedEvent.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full text-center bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg font-medium transition-colors"
+                <div className="space-y-3">
+                  <Button
+                    onClick={handleJoinPrayer}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium"
                   >
-                    📰 Read Full Article
-                  </a>
+                    🙏 Join Prayer Circle
+                  </Button>
+
+                  <Button
+                    onClick={handleShareEvent}
+                    className="w-full bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg font-medium"
+                  >
+                    📤 Share Event
+                  </Button>
+
+                  {selectedEvent.url && (
+                    <a
+                      href={selectedEvent.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block w-full text-center bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg font-medium transition-colors"
+                    >
+                      📰 Read Full Article
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Prayer Notes Section */}
+            <div className="flex-1 overflow-hidden flex flex-col">
+              <div className="p-4 border-b border-gray-700">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-white flex items-center">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                    Prayer Notes
+                  </h3>
+                  <span className="text-sm text-gray-400">
+                    {prayerNotes.length} prayers
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto">
+                {isLoadingNotes ? (
+                  <div className="flex items-center justify-center h-32">
+                    <LoadingSpinner message="Loading prayers..." className="text-white" />
+                  </div>
+                ) : notesError ? (
+                  <div className="p-4 text-center">
+                    <p className="text-red-400 mb-2">Failed to load prayer notes</p>
+                    <p className="text-gray-500 text-sm">Check your connection and try again</p>
+                  </div>
+                ) : prayerNotes.length === 0 ? (
+                  <div className="p-4 text-center">
+                    <div className="text-6xl mb-4">🕯️</div>
+                    <p className="text-gray-400 mb-2">No prayers yet</p>
+                    <p className="text-gray-500 text-sm">Be the first to light a candle for this event</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 p-4">
+                    {prayerNotes.map((note: PrayerNote) => (
+                      <div 
+                        key={note._id}
+                        className="bg-gray-800 bg-opacity-60 rounded-lg p-4 border border-gray-700"
+                      >
+                        <p className="text-gray-200 text-sm leading-relaxed mb-3">
+                          "{note.content}"
+                        </p>
+                        <div className="flex items-center justify-between text-xs text-gray-400">
+                          <div className="flex items-center">
+                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {getTimeAgo(note.createdAt)}
+                          </div>
+                          {note.likes > 0 && (
+                            <div className="flex items-center">
+                              <svg className="w-3 h-3 mr-1 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                              </svg>
+                              {note.likes}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
-          </div>
+          </>
         )}
       </div>
 

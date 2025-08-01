@@ -1,5 +1,45 @@
 /**
  * Comprehensive API Service for handling all backend requests
+ * Based on docs/BACKEND_INTEGRATION.md sinterface UserResponse {
+  success: boolean;
+  data: {
+    user: {
+      _id: string;
+      email: string;
+      username?: string;
+      bio?: string;
+      profilePicture?: string;
+      createdAt: string;
+      updatedAt?: string;
+    };
+  };
+}
+
+// User update interfaces
+interface UpdateUserRequest {
+  username?: string;
+  bio?: string;
+  profilePicture?: string;
+}
+
+interface UpdateUserResponse {
+  success: boolean;
+  data: {
+    user: {
+      _id: string;
+      email: string;
+      username?: string;
+      bio?: string;
+      profilePicture?: string;
+      createdAt: string;
+      updatedAt: string;
+    };
+  };
+  message: string;
+}
+
+/**
+ * Comprehensive API Service for handling all backend requests
  * Based on docs/BACKEND_INTEGRATION.md specifications
  */
 
@@ -118,6 +158,29 @@ interface UserResponse {
   };
 }
 
+// User profile update interfaces
+interface UpdateUserRequest {
+  name?: string;
+  bio?: string;
+  profilePicture?: string;
+}
+
+interface UpdateUserResponse {
+  success: boolean;
+  data: {
+    user: {
+      _id: string;
+      email: string;
+      name: string;
+      bio?: string;
+      profilePicture?: string;
+      createdAt: string;
+      updatedAt: string;
+    };
+  };
+  message: string;
+}
+
 // Prayer Notes API Types
 interface CreatePrayerNoteRequest {
   content: string;
@@ -131,6 +194,7 @@ interface PrayerNote {
   isPublic: boolean;
   category?: string;
   userId: string;
+  likes: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -146,6 +210,94 @@ interface PrayerNotesResponse {
       pages: number;
     };
   };
+}
+
+// Search response for prayer notes (matches backend format)
+interface PrayerNotesSearchResponse {
+  status: string;
+  results: number;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+  data: {
+    prayerNotes: Array<{
+      _id: string;
+      content: string;
+      likes: number;
+      isPublic: boolean;
+      createdAt: string;
+      updatedAt: string;
+      userId: {
+        _id: string;
+        username: string;
+        profilePicture?: string;
+      } | null;
+      lightId: {
+        _id: string;
+        title: string;
+        location: string;
+      } | null;
+    }>;
+    query: string;
+  };
+}
+
+// Light API Types
+interface CreateLightWithPrayerRequest {
+  location: string;
+  title?: string;
+  description?: string;
+  isAnonymous?: boolean;
+  eventId?: string;
+  prayerContent: string;
+  prayerIsPublic?: boolean;
+}
+
+interface Light {
+  _id: string;
+  location: string;
+  timestamp: string;
+  createdBy: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  title?: string;
+  description?: string;
+  category?: string;
+  status: 'active' | 'completed' | 'cancelled';
+  prayerCount: number;
+  isAnonymous: boolean;
+  eventId?: string;
+  prayerNoteId?: {
+    _id: string;
+    content: string;
+    isPublic: boolean;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface PrayerNoteWithLight extends PrayerNote {
+  lightId: {
+    _id: string;
+    title?: string;
+    location: string;
+  };
+}
+
+interface CreateLightWithPrayerResponse {
+  success: boolean;
+  data: {
+    light: Light;
+    prayerNote: PrayerNoteWithLight;
+    lightId: string;
+    prayerNoteId: string;
+  };
+  message: string;
 }
 
 // Legacy Types (for backward compatibility)
@@ -345,6 +497,28 @@ class ApiService {
   }
 
   /**
+   * Update user profile
+   */
+  async updateUserProfile(request: UpdateUserRequest): Promise<UpdateUserResponse> {
+    return this.request('/api/v1/users/updateMe', {
+      method: 'PATCH',
+      body: JSON.stringify(request),
+    });
+  }
+
+  /**
+   * Get user's prayer notes (for profile page)
+   */
+  async getUserProfileNotes(page: number = 1, limit: number = 10): Promise<PrayerNotesResponse> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+
+    return this.request(`/api/v1/users/me/notes?${params.toString()}`);
+  }
+
+  /**
    * Logout user (clear token)
    */
   logout(): void {
@@ -359,7 +533,7 @@ class ApiService {
    * Create a new prayer note
    */
   async createPrayerNote(request: CreatePrayerNoteRequest): Promise<{ success: boolean; data: PrayerNote }> {
-    return this.request('/api/prayer-notes', {
+    return this.request('/api/prayer/notes', {
       method: 'POST',
       body: JSON.stringify(request),
     });
@@ -374,7 +548,7 @@ class ApiService {
       limit: limit.toString(),
     });
 
-    return this.request(`/api/prayer-notes?${params.toString()}`);
+    return this.request(`/api/prayer/my-notes?${params.toString()}`);
   }
 
   /**
@@ -387,7 +561,46 @@ class ApiService {
     });
     if (category) params.append('category', category);
 
-    return this.request(`/api/prayer-notes/public?${params.toString()}`);
+    return this.request(`/api/prayer/notes?${params.toString()}`);
+  }
+
+  /**
+   * Get prayer notes for a specific event
+   */
+  async getEventPrayerNotes(eventId: string, page: number = 1, limit: number = 20): Promise<PrayerNotesResponse> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+
+    return this.request(`/api/v1/events/${eventId}/notes?${params.toString()}`);
+  }
+
+  /**
+   * Search prayer notes by query
+   */
+  async searchPrayerNotes(query: string, page: number = 1, limit: number = 20): Promise<PrayerNotesSearchResponse> {
+    const params = new URLSearchParams({
+      q: query,
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+
+    return this.request(`/api/prayer/search?${params.toString()}`);
+  }
+
+  // ============================================================================
+  // LIGHT API METHODS
+  // ============================================================================
+
+  /**
+   * Create a light with associated prayer note
+   */
+  async createLightWithPrayer(request: CreateLightWithPrayerRequest): Promise<CreateLightWithPrayerResponse> {
+    return this.request('/api/lights/with-prayer', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
   }
 
   // ============================================================================
@@ -492,11 +705,20 @@ export type {
   RegisterRequest,
   AuthResponse,
   UserResponse,
+  UpdateUserRequest,
+  UpdateUserResponse,
   
   // Prayer Notes types
   CreatePrayerNoteRequest,
   PrayerNote,
   PrayerNotesResponse,
+  PrayerNotesSearchResponse,
+  
+  // Light types
+  CreateLightWithPrayerRequest,
+  Light,
+  PrayerNoteWithLight,
+  CreateLightWithPrayerResponse,
   
   // Legacy types
   GeneratePrayerRequest,

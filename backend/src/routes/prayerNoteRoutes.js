@@ -27,4 +27,8 @@ router.get('/my-notes',
   prayerNoteController.getUserPrayerNotes
 );
 
+router.get('/search',
+  prayerNoteController.searchPrayerNotes
+);
+
 module.exports = router;
