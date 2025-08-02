@@ -10,7 +10,7 @@ const router = express.Router();
 
 // Mount routes
 router.use('/auth', authRoutes);
-router.use('/user', userRoutes);
+router.use('/users', userRoutes);
 router.use('/prayer', prayerNoteRoutes);
 router.use('/ai', aiRoutes);
 router.use('/news', newsRoutes);

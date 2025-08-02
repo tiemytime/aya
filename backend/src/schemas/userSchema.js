@@ -50,8 +50,20 @@ const updateProfileSchema = z.object({
     .optional(),
 });
 
+const inviteUserSchema = z.object({
+  recipientEmail: z.string()
+    .email('Please provide a valid email address')
+    .trim()
+    .toLowerCase(),
+  message: z.string()
+    .max(500, 'Message must be at most 500 characters long')
+    .trim()
+    .optional(),
+});
+
 module.exports = {
   registerUserSchema,
   loginUserSchema,
   updateProfileSchema,
+  inviteUserSchema,
 };

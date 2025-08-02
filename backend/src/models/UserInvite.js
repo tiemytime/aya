@@ -29,6 +29,9 @@ const userInviteSchema = new mongoose.Schema({
     required: [true, 'Invite expiration date is required'],
     default: () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
   },
+  acceptedAt: {
+    type: Date,
+  },
 }, {
   timestamps: { createdAt: true, updatedAt: false }, // Only track creation time
 });
@@ -36,7 +39,6 @@ const userInviteSchema = new mongoose.Schema({
 // Index for better query performance
 userInviteSchema.index({ senderId: 1, status: 1 });
 userInviteSchema.index({ recipientEmail: 1, status: 1 });
-userInviteSchema.index({ token: 1 }, { unique: true });
 userInviteSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // TTL index
 
 const UserInvite = mongoose.model('UserInvite', userInviteSchema);
