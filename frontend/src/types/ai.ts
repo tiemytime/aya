@@ -48,3 +48,4 @@ export interface PrayerHistoryResponse {
   };
   message?: string;
 }
+
