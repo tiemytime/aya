@@ -41,7 +41,7 @@ const PrayerConfirmationPage: React.FC = () => {
           <p className="text-gray-400 mb-6">Please create a prayer first.</p>
           <Button
             onClick={() => navigate('/submit-prayer')}
-            variant="gradient-gold"
+            variant="cosmic-gold"
             className="px-6 py-3"
           >
             Create Prayer
@@ -201,7 +201,7 @@ const PrayerConfirmationPage: React.FC = () => {
             {/* Action Button */}
             <Button
               onClick={handleGoToWall}
-              variant="gradient-gold"
+              variant="cosmic-gold"
               className="w-full py-3 text-lg font-semibold"
             >
               Go to Wall of Prayers

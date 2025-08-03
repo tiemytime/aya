@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Button } from '@/components/UI';
+import { Button, Input, Textarea, Card, CardContent, CardTitle, Label } from '@/components/UI';
 import { NewsEvent } from '@/types';
 import { apiService, CreateLightWithPrayerRequest } from '@/services';
 
@@ -138,34 +138,34 @@ const SubmitPrayerPage: React.FC = () => {
 
       {/* Main content */}
       <div className="relative z-20 w-full h-full flex items-center justify-center p-8">
-        <div className="w-full max-w-7xl h-full max-h-[80vh] bg-gray-900 bg-opacity-50 backdrop-blur-sm rounded-2xl border border-gray-700 flex overflow-hidden">
+        <Card className="w-full max-w-7xl h-full max-h-[80vh] bg-glass-bg-medium/20 backdrop-blur-cosmic border-glass-border-light/40 shadow-float-heavy hover:shadow-glow-purple/20 flex overflow-hidden rounded-2xl transition-all duration-500">
           
           {/* Left Panel - Event Information */}
-          <div className="w-1/3 p-6 border-r border-gray-700 bg-gray-800 bg-opacity-30">
+          <CardContent className="w-1/3 p-8 border-r border-glass-border-light/30 bg-gradient-to-br from-cosmic-void/20 to-cosmic-deep-space/30">
             <div className="h-full flex flex-col">
-              <h3 className="text-lg font-semibold text-white mb-4">
+              <CardTitle className="text-xl font-elegant text-cosmic-starlight mb-6 text-shadow-cosmic">
                 {selectedEvent ? 'Current Event' : 'Global Prayer'}
-              </h3>
+              </CardTitle>
 
               {selectedEvent ? (
                 <div className="space-y-4 flex-1">
-                  <h4 className="text-xl font-bold text-white leading-tight">
+                  <h4 className="text-xl font-bold text-cosmic-light leading-tight">
                     {selectedEvent.title}
                   </h4>
                   
-                  <p className="text-gray-300 text-sm leading-relaxed">
+                  <p className="text-cosmic-muted text-sm leading-relaxed">
                     {selectedEvent.description}
                   </p>
 
                   <div className="space-y-2">
-                    <div className="flex items-center text-xs text-gray-400">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
+                    <div className="flex items-center text-xs text-cosmic-muted">
+                      <div className="w-2 h-2 bg-cosmic-secondary rounded-full mr-2"></div>
                       {new Date(selectedEvent.published_at).toLocaleDateString()}
                     </div>
                     
                     {selectedEvent.country && (
-                      <div className="flex items-center text-xs text-gray-400">
-                        <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                      <div className="flex items-center text-xs text-cosmic-muted">
+                        <div className="w-2 h-2 bg-cosmic-accent rounded-full mr-2"></div>
                         {selectedEvent.country}
                       </div>
                     )}
@@ -173,7 +173,7 @@ const SubmitPrayerPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-4 flex-1">
-                  <p className="text-gray-300 text-sm leading-relaxed">
+                  <p className="text-cosmic-muted text-sm leading-relaxed">
                     Join millions around the world in a moment of unity and hope. 
                     Your prayer will be part of a global tapestry of intentions for 
                     peace, healing, and love.
@@ -183,9 +183,9 @@ const SubmitPrayerPage: React.FC = () => {
 
               {selectedEvent && (
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-400 mb-2">SOURCES</h4>
+                  <h4 className="text-sm font-semibold text-cosmic-muted mb-2">SOURCES</h4>
                   <div className="space-y-1">
-                    <p className="text-blue-400 text-sm hover:underline cursor-pointer">
+                    <p className="text-cosmic-secondary text-sm hover:underline cursor-pointer hover:text-cosmic-primary transition-colors">
                       {selectedEvent.source}
                     </p>
                   </div>
@@ -196,89 +196,97 @@ const SubmitPrayerPage: React.FC = () => {
             {/* Close button */}
             <button
               onClick={() => navigate(-1)}
-              className="mt-4 text-gray-400 hover:text-white transition-colors text-sm"
+              className="mt-4 text-cosmic-muted hover:text-cosmic-light transition-colors text-sm"
             >
               ← Back to Globe
             </button>
-          </div>
+          </CardContent>
 
           {/* Right Panel - Prayer Form */}
-          <div className="w-2/3 p-8 flex flex-col">
-            <h2 className="text-2xl font-semibold text-white mb-6">
+          <CardContent className="w-2/3 p-8 flex flex-col">
+            <CardTitle className="text-2xl font-semibold text-cosmic-light mb-6">
               Write your intention here
-            </h2>
+            </CardTitle>
 
             <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
               
               {/* Main textarea */}
               <div className="flex-1 mb-4">
-                <textarea
+                <Textarea
                   value={form.userIntent}
                   onChange={(e) => setForm({ ...form, userIntent: e.target.value })}
-                  className="w-full h-full p-4 bg-gray-800 bg-opacity-60 text-white rounded-lg resize-none border border-gray-600 focus:border-blue-400 focus:outline-none transition-colors placeholder-gray-400"
+                  className="w-full h-full cosmic-glow-focus"
                   placeholder="Your prayer intention..."
                   maxLength={500}
                 />
                 {getFieldError('userIntent') && (
-                  <p className="text-red-400 text-sm mt-1">{getFieldError('userIntent')}</p>
+                  <p className="text-cosmic-destructive text-sm mt-1">{getFieldError('userIntent')}</p>
                 )}
-                <p className="text-right text-gray-400 text-xs mt-1">
+                <p className="text-right text-cosmic-muted text-xs mt-1">
                   {form.userIntent.length}/500 character limit
                 </p>
               </div>
 
               {/* Optional fields */}
               <div className="grid grid-cols-2 gap-4 mb-6">
-                <div>
-                  <input
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-cosmic-muted">Name (optional)</Label>
+                  <Input
+                    id="name"
                     type="text"
-                    placeholder="Name (optional)"
+                    placeholder="Enter your name"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="w-full p-3 bg-gray-800 bg-opacity-60 text-white rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none transition-colors placeholder-gray-400"
+                    className="cosmic-glow-focus"
                   />
                   {getFieldError('name') && (
-                    <p className="text-red-400 text-sm mt-1">{getFieldError('name')}</p>
+                    <p className="text-cosmic-destructive text-sm mt-1">{getFieldError('name')}</p>
                   )}
                 </div>
 
-                <div>
-                  <input
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-cosmic-muted">Email (optional)</Label>
+                  <Input
+                    id="email"
                     type="email"
-                    placeholder="Email (optional)"
+                    placeholder="Enter your email"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className="w-full p-3 bg-gray-800 bg-opacity-60 text-white rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none transition-colors placeholder-gray-400"
+                    className="cosmic-glow-focus"
                   />
                   {getFieldError('email') && (
-                    <p className="text-red-400 text-sm mt-1">{getFieldError('email')}</p>
+                    <p className="text-cosmic-destructive text-sm mt-1">{getFieldError('email')}</p>
                   )}
                 </div>
 
-                <div>
-                  <input
+                <div className="space-y-2">
+                  <Label htmlFor="location" className="text-cosmic-muted">Location (required)</Label>
+                  <Input
+                    id="location"
                     type="text"
-                    placeholder="Location (required)"
+                    placeholder="Enter your location"
                     value={form.location}
                     onChange={(e) => setForm({ ...form, location: e.target.value })}
-                    className="w-full p-3 bg-gray-800 bg-opacity-60 text-white rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none transition-colors placeholder-gray-400"
+                    className="cosmic-glow-focus"
                     required
                   />
                   {getFieldError('location') && (
-                    <p className="text-red-400 text-sm mt-1">{getFieldError('location')}</p>
+                    <p className="text-cosmic-destructive text-sm mt-1">{getFieldError('location')}</p>
                   )}
                 </div>
 
-                <div>
-                  <input
+                <div className="space-y-2">
+                  <Label htmlFor="age" className="text-cosmic-muted">Age (optional)</Label>
+                  <Input
+                    id="age"
                     type="number"
-                    placeholder="Age (optional)"
+                    placeholder="Enter your age"
                     value={form.age}
                     onChange={(e) => setForm({ ...form, age: e.target.value })}
-                    className="w-full p-3 bg-gray-800 bg-opacity-60 text-white rounded-lg border border-gray-600 focus:border-blue-400 focus:outline-none transition-colors placeholder-gray-400"
+                    className="cosmic-glow-focus"
                   />
                   {getFieldError('age') && (
-                    <p className="text-red-400 text-sm mt-1">{getFieldError('age')}</p>
+                    <p className="text-cosmic-destructive text-sm mt-1">{getFieldError('age')}</p>
                   )}
                 </div>
               </div>
@@ -288,11 +296,13 @@ const SubmitPrayerPage: React.FC = () => {
                 <Button
                   type="submit"
                   disabled={createLightWithPrayerMutation.isPending || !form.userIntent.trim() || !form.location.trim()}
-                  className="px-8 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-semibold rounded-full hover:from-yellow-600 hover:to-orange-600 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="cosmic-gold"
+                  size="lg"
+                  className="px-8 py-3 cosmic-pulse"
                 >
                   {createLightWithPrayerMutation.isPending ? (
                     <span className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cosmic-dark mr-2"></div>
                       Lighting your candle...
                     </span>
                   ) : (
@@ -303,13 +313,13 @@ const SubmitPrayerPage: React.FC = () => {
 
               {/* Error message */}
               {createLightWithPrayerMutation.isError && (
-                <p className="text-red-400 text-center mt-4">
+                <p className="text-cosmic-destructive text-center mt-4">
                   Error: {createLightWithPrayerMutation.error?.message || 'Failed to light your candle'}
                 </p>
               )}
             </form>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

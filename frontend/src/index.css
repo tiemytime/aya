@@ -3,14 +3,21 @@
 @tailwind utilities;
 
 :root {
+  /* Shadcn base colors */
   --border: 214.3 31.8% 91.4%;
   --background: 222.2 84% 4.9%; /* Dark background */
   --foreground: 210 40% 98%; /* Light text */
   --primary: 222.2 47.4% 11.2%;
   --primary-foreground: 210 40% 98%;
+  
+  /* Cosmic theme ring colors */
+  --ring: 222.2 47.4% 11.2%;
 }
 
 @layer base {
+  /* Enhanced font loading for cosmic typography */
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Orbitron:wght@400;500;600;700;800;900&family=Cinzel:wght@400;500;600&display=swap');
+  
   html, body {
     height: 100%;
     margin: 0;
@@ -25,6 +32,31 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+  }
+  
+  /* Enhanced cosmic text rendering */
+  .font-elegant {
+    font-family: 'Cormorant Garamond', serif;
+    font-feature-settings: 'liga', 'kern';
+    text-rendering: optimizeLegibility;
+  }
+  
+  .font-modern {
+    font-family: 'Poppins', sans-serif;
+    font-feature-settings: 'liga', 'kern';
+    text-rendering: optimizeLegibility;
+  }
+  
+  .font-cosmic {
+    font-family: 'Orbitron', monospace;
+    font-feature-settings: 'liga', 'kern';
+    text-rendering: optimizeLegibility;
+  }
+  
+  .font-mystical {
+    font-family: 'Cinzel', serif;
+    font-feature-settings: 'liga', 'kern';
+    text-rendering: optimizeLegibility;
   }
 }
 
@@ -104,5 +136,38 @@
     width: 100%;
     margin: 0 1rem;
     padding: 1.5rem;
+  }
+
+  /* Enhanced Cosmic UI Components */
+  .cosmic-glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+  
+  .cosmic-glow-hover:hover {
+    animation: glowPulse 2s ease-in-out infinite;
+  }
+  
+  .immersive-parallax {
+    transform-style: preserve-3d;
+    perspective: 1000px;
+  }
+  
+  .stellar-text-glow {
+    text-shadow: 
+      0 0 5px rgba(255, 255, 255, 0.9),
+      0 0 10px rgba(251, 191, 36, 0.6),
+      0 0 15px rgba(251, 191, 36, 0.4),
+      0 0 20px rgba(251, 191, 36, 0.2);
+  }
+  
+  .ethereal-text-glow {
+    text-shadow: 
+      0 0 8px rgba(255, 255, 255, 0.8),
+      0 0 16px rgba(139, 92, 246, 0.6),
+      0 0 24px rgba(139, 92, 246, 0.4),
+      0 0 32px rgba(139, 92, 246, 0.2);
   }
 }

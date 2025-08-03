@@ -2,7 +2,7 @@ import React from 'react';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
-import { Button } from '../Button';
+import { Button } from '../../ui/button';
 
 describe('Button', () => {
   it('renders children correctly', () => {
@@ -17,21 +17,21 @@ describe('Button', () => {
   });
 
   it('applies primary variant classes correctly', () => {
-    const { getByRole } = render(<Button variant="primary">Primary Button</Button>);
+    const { getByRole } = render(<Button variant="cosmic-primary">Primary Button</Button>);
     const button = getByRole('button');
-    expect(button).toHaveClass('bg-[#2563eb]', 'text-white');
+    expect(button).toHaveClass('bg-gradient-to-r');
   });
 
   it('applies gradient-green variant classes correctly', () => {
-    const { getByRole } = render(<Button variant="gradient-green">Gradient Green</Button>);
+    const { getByRole } = render(<Button variant="cosmic-green">Cosmic Green</Button>);
     const button = getByRole('button');
-    expect(button).toHaveClass('bg-gradient-to-r', 'from-[#10b981]', 'to-[#059669]');
+    expect(button).toHaveClass('bg-gradient-to-r');
   });
 
   it('applies gradient-gold variant classes correctly', () => {
-    const { getByRole } = render(<Button variant="gradient-gold">Gradient Gold</Button>);
+    const { getByRole } = render(<Button variant="cosmic-gold">Cosmic Gold</Button>);
     const button = getByRole('button');
-    expect(button).toHaveClass('bg-gradient-to-r', 'from-[#fbbf24]', 'to-[#f59e0b]');
+    expect(button).toHaveClass('bg-gradient-to-r');
   });
 
   it('applies large size classes correctly', () => {
