@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { GeneratedPrayer } from '@/types/ai';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription, Badge, Avatar, AvatarFallback, Input, PrayerDetailDialog, Button } from '@/components/UI';
 import { usePrayerHistory } from '@/hooks';
+import { StarfieldBackground } from '@/components/shared';
 
 // Mock hook removed - now using the actual hook from usePrayerGeneration.ts
 
@@ -48,65 +49,6 @@ const WallOfPrayersPage: React.FC = () => {
 
   const filters = ['Last event', 'Most trend', 'Environment', 'Religion', 'All'];
 
-  // Helper function to render enhanced starry background
-  const renderStarryBackground = () => {
-    return (
-      <div className="absolute inset-0">
-        {Array.from({ length: 300 }).map((_, i) => (
-          <div
-            key={i}
-            className={`absolute rounded-full animate-pulse ${
-              i % 3 === 0 ? 'w-2 h-2 bg-cosmic-starlight' : 
-              i % 3 === 1 ? 'w-1 h-1 bg-cosmic-violet-mist' : 
-              'w-0.5 h-0.5 bg-cosmic-silver-mist'
-            }`}
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 5}s`,
-              animationDuration: `${2 + Math.random() * 3}s`,
-              opacity: Math.random() * 0.9 + 0.1,
-            }}
-          />
-        ))}
-      </div>
-    );
-  };
-
-  // Enhanced cosmic nebula effects
-  const renderCosmicNebulae = () => {
-    return (
-      <div className="absolute inset-0 overflow-hidden">
-        {/* Primary nebula */}
-        <div 
-          className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-30 animate-pulse"
-          style={{
-            background: 'radial-gradient(circle, rgba(147, 51, 234, 0.4) 0%, rgba(79, 70, 229, 0.3) 25%, rgba(59, 130, 246, 0.2) 50%, transparent 70%)',
-            animationDuration: '8s'
-          }}
-        />
-        {/* Secondary nebula */}
-        <div 
-          className="absolute -bottom-32 -left-32 w-80 h-80 rounded-full opacity-25 animate-pulse"
-          style={{
-            background: 'radial-gradient(circle, rgba(236, 72, 153, 0.3) 0%, rgba(168, 85, 247, 0.2) 30%, transparent 60%)',
-            animationDuration: '12s',
-            animationDelay: '2s'
-          }}
-        />
-        {/* Accent nebula */}
-        <div 
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full opacity-20 animate-pulse"
-          style={{
-            background: 'radial-gradient(circle, rgba(251, 191, 36, 0.3) 0%, rgba(245, 158, 11, 0.2) 25%, transparent 50%)',
-            animationDuration: '10s',
-            animationDelay: '4s'
-          }}
-        />
-      </div>
-    );
-  };
-
   // Format date helper
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -128,14 +70,20 @@ const WallOfPrayersPage: React.FC = () => {
   };
 
   return (
-    <div className="relative w-screen min-h-screen bg-gradient-to-br from-cosmic-void via-cosmic-deep-space to-cosmic-void overflow-hidden">
-      {/* Enhanced starry background */}
-      <div className="absolute inset-0 opacity-60">
-        {renderStarryBackground()}
+    <div className="relative w-screen min-h-screen bg-black overflow-hidden">
+      {/* Globe-based Realistic Starfield Background */}
+      <StarfieldBackground numStars={8000} enableAnimation={true} />
+      
+      {/* Cosmic atmosphere overlay */}
+      <div className="absolute inset-0 z-10 opacity-60">
+        <div className="absolute inset-0 bg-gradient-to-br from-cosmic-void/30 via-cosmic-deep-space/20 to-cosmic-void/30"></div>
       </div>
 
-      {/* Cosmic nebulae effects */}
-      {renderCosmicNebulae()}
+      {/* Enhanced cosmic nebulae effects */}
+      <div className="absolute inset-0 z-10 opacity-40">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-radial from-cosmic-stellar-blue/20 via-cosmic-ethereal-purple/10 to-transparent rounded-full blur-3xl animate-breathe"></div>
+        <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-gradient-radial from-cosmic-mystic-purple/15 via-cosmic-divine-gold/5 to-transparent rounded-full blur-3xl animate-float"></div>
+      </div>
 
       {/* Floating cosmic particles */}
       <div className="absolute inset-0 opacity-30">
@@ -154,9 +102,9 @@ const WallOfPrayersPage: React.FC = () => {
       </div>
 
       {/* Main content container with enhanced glassmorphism */}
-      <div className="relative z-10 min-h-screen bg-gradient-to-b from-transparent via-cosmic-void/10 to-transparent">
+      <div className="relative z-20 min-h-screen bg-gradient-to-b from-transparent via-cosmic-void/10 to-transparent">
         {/* Enhanced Header */}
-        <header className="backdrop-blur-cosmic bg-glass-bg-heavy/20 border-b border-glass-border-light/30 sticky top-0 z-20">
+        <header className="backdrop-blur-cosmic bg-glass-bg-heavy/20 border-b border-glass-border-light/30 sticky top-0 z-30">
           <div className="flex items-center justify-between p-6 lg:p-8 max-w-7xl mx-auto">
             {/* Logo section */}
             <div className="flex items-center space-x-6">
@@ -175,13 +123,22 @@ const WallOfPrayersPage: React.FC = () => {
               
               <div className="flex items-center space-x-3">
                 <div className="relative">
-                  <div className="w-12 h-12 bg-gradient-to-br from-cosmic-solar-gold to-cosmic-stellar-gold rounded-full flex items-center justify-center shadow-glow-gold/50 animate-glow-pulse-slow">
-                    <span className="text-cosmic-void text-xl font-bold">🕯️</span>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center">
+                    <img 
+                      src="/logo.png" 
+                      alt="Logo" 
+                      className="w-12 h-12 rounded-full object-cover opacity-80 hover:opacity-100 transition-opacity duration-300"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const fallback = target.nextElementSibling as HTMLElement;
+                        if (fallback) fallback.style.display = 'block';
+                      }}
+                    />
+                    <span className="hidden text-xl">🕯️</span>
                   </div>
-                  <div className="absolute -inset-1 bg-gradient-to-br from-cosmic-solar-gold/30 to-cosmic-stellar-gold/30 rounded-full blur animate-pulse"></div>
                 </div>
                 <div>
-                  <div className="text-cosmic-starlight font-elegant text-2xl font-bold text-shadow-cosmic">AYA</div>
                   <div className="text-cosmic-silver-mist text-sm font-modern">Global Prayer Network</div>
                 </div>
               </div>

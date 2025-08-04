@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, Input, Textarea, Card, CardContent, CardTitle, Label } from '@/components/UI';
 import { NewsEvent } from '@/types';
 import { apiService, CreateLightWithPrayerRequest } from '@/services';
+import { StarfieldBackground } from '@/components/shared';
 
 // Define the form schema for validation
 const prayerFormSchema = z.object({
@@ -78,33 +79,10 @@ const SubmitPrayerPage: React.FC = () => {
     return error?.message;
   };
 
-  // Helper function to render starry background
-  const renderStarryBackground = () => {
-    const stars = Array.from({ length: 200 }, (_, i) => i);
-    return (
-      <div className="absolute inset-0">
-        {stars.map((i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              opacity: Math.random() * 0.8 + 0.2,
-            }}
-          />
-        ))}
-      </div>
-    );
-  };
-
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-gradient-to-b from-black via-gray-900 to-black">
-      {/* Starry background */}
-      <div className="absolute inset-0 opacity-40">
-        {renderStarryBackground()}
-      </div>
+      {/* Starfield Background */}
+      <StarfieldBackground />
 
       {/* Earth/Globe background effect */}
       <div className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-1/4">
@@ -118,11 +96,29 @@ const SubmitPrayerPage: React.FC = () => {
       </div>
 
       {/* Top Navigation */}
-      <div className="absolute top-0 left-0 right-0 z-30 p-6">
+      <div className="absolute top-0 left-0 right-0 z-30 p-8">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <div className="text-white font-bold text-xl">AYA</div>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center">
+              <img 
+                src="/logo.png" 
+                alt="Logo" 
+                className="w-12 h-12 rounded-full object-cover opacity-80 hover:opacity-100 transition-opacity duration-300"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const fallback = target.nextElementSibling as HTMLElement;
+                  if (fallback) fallback.style.display = 'block';
+                }}
+              />
+              <div className="hidden w-12 h-12 relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-400 rounded-full opacity-80"></div>
+                <div className="absolute inset-1 bg-black/50 rounded-full flex items-center justify-center">
+                  <div className="text-white font-bold text-sm">A</div>
+                </div>
+              </div>
+            </div>
             <div className="text-gray-400 text-sm">
               <div>One prayer</div>
               <div>One world</div>

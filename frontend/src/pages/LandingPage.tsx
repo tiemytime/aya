@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import StarfieldBackground from '@/components/shared/StarfieldBackground';
 
 interface LandingPageProps {
   onNavigateToGlobe?: () => void;
@@ -42,131 +43,33 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToGlobe }) => {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-black">
-      {/* Enhanced Realistic Space Background with Visible Starfield */}
-      <div className="absolute inset-0 z-0">
-        {/* Deep space background with subtle blue tint */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-950 to-black"></div>
+      {/* Globe-based Realistic Starfield Background */}
+      <StarfieldBackground numStars={10000} enableAnimation={true} />
+      
+      {/* Additional cosmic atmosphere overlay */}
+      <div className="absolute inset-0 z-10">
+        {/* Subtle dark gradient overlays for enhanced depth */}
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/20 via-purple-950/15 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-tr from-slate-900/10 via-blue-950/8 to-indigo-950/15"></div>
         
-        {/* More visible blue gradient overlays */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-blue-800/25 via-indigo-900/30 to-black"></div>
-        <div className="absolute inset-0 bg-gradient-to-tr from-purple-900/20 via-blue-600/15 to-indigo-900/25"></div>
+        {/* Central subtle nebula */}
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial from-blue-500/10 via-purple-600/6 via-indigo-800/4 to-transparent rounded-full blur-3xl animate-breathe"></div>
         
-        {/* Enhanced visible starfield */}
-        <div className="absolute inset-0">
-          {/* Large bright stars */}
-          {Array.from({ length: 150 }).map((_, i) => (
-            <div
-              key={`large-star-${i}`}
-              className="absolute bg-white rounded-full animate-twinkle"
-              style={{
-                width: `${Math.random() * 3 + 1}px`,
-                height: `${Math.random() * 3 + 1}px`,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                opacity: Math.random() * 0.8 + 0.6, // Much more visible
-                animationDelay: `${Math.random() * 5}s`,
-                animationDuration: `${Math.random() * 3 + 3}s`,
-                boxShadow: `0 0 ${Math.random() * 12 + 4}px rgba(255,255,255,${Math.random() * 0.7 + 0.5})`,
-              }}
-            />
-          ))}
-          
-          {/* Medium blue-tinted stars */}
-          {Array.from({ length: 200 }).map((_, i) => (
-            <div
-              key={`medium-star-${i}`}
-              className="absolute bg-blue-100 rounded-full animate-twinkle"
-              style={{
-                width: `${Math.random() * 2 + 0.5}px`,
-                height: `${Math.random() * 2 + 0.5}px`,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                opacity: Math.random() * 0.6 + 0.4, // More visible
-                animationDelay: `${Math.random() * 4}s`,
-                animationDuration: `${Math.random() * 2 + 2}s`,
-              }}
-            />
-          ))}
-          
-          {/* Small background stars */}
-          {Array.from({ length: 400 }).map((_, i) => (
-            <div
-              key={`small-star-${i}`}
-              className="absolute bg-white rounded-full"
-              style={{
-                width: `${Math.random() * 1 + 0.5}px`,
-                height: `${Math.random() * 1 + 0.5}px`,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                opacity: Math.random() * 0.5 + 0.3, // More visible
-              }}
-            />
-          ))}
-          
-          {/* Very bright focal stars */}
-          {Array.from({ length: 30 }).map((_, i) => (
-            <div
-              key={`bright-star-${i}`}
-              className="absolute bg-white rounded-full animate-glow-pulse"
-              style={{
-                width: `${Math.random() * 4 + 2}px`,
-                height: `${Math.random() * 4 + 2}px`,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 3}s`,
-                boxShadow: `
-                  0 0 ${Math.random() * 30 + 15}px rgba(255,255,255,0.9),
-                  0 0 ${Math.random() * 50 + 25}px rgba(147,197,253,0.6),
-                  0 0 ${Math.random() * 70 + 35}px rgba(59,130,246,0.4)
-                `,
-              }}
-            />
-          ))}
-          
-          {/* More visible constellation lines */}
-          <svg className="absolute inset-0 w-full h-full opacity-30">
-            <defs>
-              <linearGradient id="constellationGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.6" />
-                <stop offset="50%" stopColor="#FFFFFF" stopOpacity="0.3" />
-                <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.6" />
-              </linearGradient>
-            </defs>
-            {Array.from({ length: 12 }).map((_, i) => (
-              <path
-                key={`constellation-${i}`}
-                d={`M${Math.random() * 100} ${Math.random() * 100} L${Math.random() * 100} ${Math.random() * 100} L${Math.random() * 100} ${Math.random() * 100}`}
-                stroke="url(#constellationGrad)"
-                strokeWidth="1"
-                fill="none"
-                className="animate-pulse"
-                style={{ animationDelay: `${i * 0.5}s` }}
-              />
-            ))}
-          </svg>
-        </div>
-
-        {/* More prominent cosmic nebulae */}
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-blue-400/40 via-purple-600/25 via-indigo-800/20 to-transparent rounded-full blur-3xl animate-breathe"></div>
-        
-        {/* Visible secondary nebula clouds */}
-        <div className="absolute top-1/4 right-1/3 w-96 h-96 bg-gradient-radial from-purple-500/35 via-blue-600/20 via-indigo-700/15 to-transparent rounded-full blur-3xl animate-drift"></div>
-        <div className="absolute bottom-1/3 left-1/4 w-80 h-80 bg-gradient-radial from-blue-600/30 via-cyan-500/15 to-transparent rounded-full blur-3xl animate-float"></div>
-        
-        {/* Enhanced cosmic dust overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/15 via-transparent to-purple-900/20 animate-breathe"></div>
+        {/* Subtle ambient clouds */}
+        <div className="absolute top-1/4 right-1/3 w-80 h-80 bg-gradient-radial from-purple-600/8 via-blue-700/4 to-transparent rounded-full blur-3xl animate-drift"></div>
+        <div className="absolute bottom-1/3 left-1/4 w-72 h-72 bg-gradient-radial from-indigo-600/6 via-cyan-600/3 to-transparent rounded-full blur-3xl animate-float"></div>
       </div>
 
-      {/* Enhanced AYA Logo - Top Left */}
-      <div className="absolute top-8 left-8 z-30">
+      {/* Enhanced Logo - Top Left (moved significantly inward) */}
+      <div className="absolute z-40" style={{ top: '44px', left: '44px' }}>
         <div className="flex items-center space-x-4 group">
-          {/* Circular logo with the actual logo image */}
+          {/* Simple logo without border or glow */}
           <div className="relative">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400/20 via-purple-500/30 to-pink-400/20 backdrop-blur-sm border border-white/20 shadow-[0_0_30px_rgba(59,130,246,0.5)] hover:shadow-[0_0_50px_rgba(59,130,246,0.8)] transition-all duration-500 hover:scale-110 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center">
               <img 
                 src="/logo.png" 
-                alt="AYA Logo" 
-                className="w-12 h-12 rounded-full object-cover opacity-90 hover:opacity-100 transition-opacity duration-300"
+                alt="Logo" 
+                className="w-16 h-16 rounded-full object-cover opacity-80 hover:opacity-100 transition-opacity duration-300"
                 onError={(e) => {
                   // Fallback to geometric design if image fails
                   const target = e.target as HTMLImageElement;
@@ -176,41 +79,40 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToGlobe }) => {
                 }}
               />
               {/* Fallback geometric logo */}
-              <div className="hidden w-12 h-12 relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-400 rounded-full"></div>
+              <div className="hidden w-16 h-16 relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-400 rounded-full opacity-80"></div>
                 <div className="absolute inset-1 bg-black/50 rounded-full flex items-center justify-center">
                   <div className="text-white font-bold text-lg">A</div>
                 </div>
               </div>
             </div>
-            {/* Rotating border effect */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 animate-spin-slow opacity-30"></div>
           </div>
-          <span className="text-2xl font-extralight text-white tracking-[0.25em] hover:text-blue-200 transition-colors duration-500 font-mono">AYA</span>
         </div>
       </div>
 
       {/* Main Content - Enhanced centered layout */}
-      <div className="relative z-20 min-h-screen flex flex-col items-center justify-center px-6">
+      <div className="relative z-30 min-h-screen flex flex-col items-center justify-center px-6">
         
         {/* Enhanced Main Text with Beautiful Typography */}
         <div className={`text-center mb-20 transition-all duration-1000 ${textVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           <h1 className="leading-tight tracking-wide">
-            <div className={`text-6xl sm:text-7xl md:text-8xl lg:text-9xl mb-6 text-white hover:text-blue-100 transition-colors duration-500 ${textVisible ? 'animate-glow-text' : ''}`}
+            <div className={`mb-8 text-white hover:text-blue-50 transition-colors duration-700 ${textVisible ? 'animate-glow-text' : ''}`}
                  style={{ 
                    fontFamily: "'Playfair Display', 'Georgia', serif",
-                   fontWeight: 300,
-                   letterSpacing: '0.02em',
-                   textShadow: '0 0 30px rgba(147,197,253,0.5), 0 0 60px rgba(59,130,246,0.3)'
+                   fontWeight: 200,
+                   letterSpacing: '0.03em',
+                   textShadow: '0 0 40px rgba(147,197,253,0.3), 0 0 80px rgba(59,130,246,0.2), 0 2px 4px rgba(0,0,0,0.3)',
+                   fontSize: 'clamp(2.5rem, 8vw, 6rem)'
                  }}>
               One prayer
             </div>
-            <div className={`text-6xl sm:text-7xl md:text-8xl lg:text-9xl text-white hover:text-blue-100 transition-colors duration-500 ${textVisible ? 'animate-glow-text-delayed' : ''}`}
+            <div className={`text-white hover:text-blue-50 transition-colors duration-700 ${textVisible ? 'animate-glow-text-delayed' : ''}`}
                  style={{ 
                    fontFamily: "'Playfair Display', 'Georgia', serif",
-                   fontWeight: 300,
-                   letterSpacing: '0.02em',
-                   textShadow: '0 0 30px rgba(147,197,253,0.5), 0 0 60px rgba(59,130,246,0.3)'
+                   fontWeight: 200,
+                   letterSpacing: '0.03em',
+                   textShadow: '0 0 40px rgba(147,197,253,0.3), 0 0 80px rgba(59,130,246,0.2), 0 2px 4px rgba(0,0,0,0.3)',
+                   fontSize: 'clamp(2.5rem, 8vw, 6rem)'
                  }}>
               One world
             </div>
@@ -240,10 +142,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToGlobe }) => {
           <div className="text-center animate-fade-in-up">
             <button
               onClick={handleEnter}
-              className="group relative px-10 py-4 text-white text-sm font-light tracking-[0.15em] border border-white/30 bg-transparent hover:bg-white/5 hover:border-white/60 transition-all duration-500 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] active:scale-95"
+              className="group relative px-12 py-5 text-white text-sm font-light tracking-[0.2em] border border-white/20 bg-black/20 backdrop-blur-sm hover:bg-white/5 hover:border-white/40 transition-all duration-700 hover:scale-105 hover:shadow-[0_0_40px_rgba(255,255,255,0.1)] active:scale-95 rounded-lg"
             >
-              <span className="relative z-10">Enter Sacred Space</span>
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+              <span className="relative z-10 uppercase">Enter Sacred Space</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/3 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 rounded-lg"></div>
             </button>
           </div>
         )}

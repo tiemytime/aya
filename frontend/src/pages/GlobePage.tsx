@@ -6,6 +6,7 @@ import { NewsEvent } from '@/types';
 import { getTimeAgo, getPriorityColor } from '@/utils';
 import { Button, AudioPlayer, LoadingSpinner } from '@/components/UI';
 import { apiService, PrayerNote } from '@/services';
+import { StarfieldBackground } from '@/components/shared';
 
 // Lazy load the Globe3D component for better initial page load performance
 const LazyGlobe3D = lazy(() => import('@/components/Globe/Globe3D'));
@@ -87,6 +88,9 @@ const GlobePage: React.FC = () => {
 
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden">
+      {/* Starfield Background */}
+      <StarfieldBackground />
+      
       {/* Lazy-loaded Globe3D Component */}
       <Suspense fallback={
         <div className="absolute inset-0 flex items-center justify-center bg-black">

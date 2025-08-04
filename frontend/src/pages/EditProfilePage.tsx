@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useUserProfile, useUpdateProfile } from '@/hooks';
 import { Button } from '@/components/UI';
 import { useNavigate } from 'react-router-dom';
+import { StarfieldBackground } from '@/components/shared';
 
 const EditProfilePage: React.FC = () => {
   const navigate = useNavigate();
@@ -78,33 +79,11 @@ const EditProfilePage: React.FC = () => {
     navigate('/profile');
   };
 
-  // Helper function to render starry background
-  const renderStarryBackground = () => {
-    return (
-      <div className="absolute inset-0">
-        {Array.from({ length: 100 }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              opacity: Math.random() * 0.8 + 0.2,
-            }}
-          />
-        ))}
-      </div>
-    );
-  };
-
   if (userLoading) {
     return (
       <div className="relative w-screen min-h-screen bg-gradient-to-b from-black via-gray-900 to-black overflow-hidden text-white">
-        {/* Starry background */}
-        <div className="absolute inset-0 opacity-40">
-          {renderStarryBackground()}
-        </div>
+        {/* Starfield Background */}
+        <StarfieldBackground />
         
         <div className="relative z-10 flex justify-center items-center min-h-screen">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
@@ -117,10 +96,8 @@ const EditProfilePage: React.FC = () => {
   if (userError) {
     return (
       <div className="relative w-screen min-h-screen bg-gradient-to-b from-black via-gray-900 to-black overflow-hidden text-white">
-        {/* Starry background */}
-        <div className="absolute inset-0 opacity-40">
-          {renderStarryBackground()}
-        </div>
+        {/* Starfield Background */}
+        <StarfieldBackground />
         
         <div className="relative z-10 flex justify-center items-center min-h-screen">
           <div className="text-center">
@@ -136,10 +113,8 @@ const EditProfilePage: React.FC = () => {
 
   return (
     <div className="relative w-screen min-h-screen bg-gradient-to-b from-black via-gray-900 to-black overflow-hidden text-white">
-      {/* Starry background */}
-      <div className="absolute inset-0 opacity-40">
-        {renderStarryBackground()}
-      </div>
+      {/* Starfield Background */}
+      <StarfieldBackground />
 
       {/* Cosmic glow effect */}
       <div className="absolute inset-0 flex items-center justify-center">
@@ -155,7 +130,7 @@ const EditProfilePage: React.FC = () => {
       {/* Main content */}
       <div className="relative z-10 min-h-screen">
         {/* Header */}
-        <div className="flex items-center justify-between p-8">
+        <div className="flex items-center justify-between p-12">
           <div className="flex items-center space-x-4">
             <button 
               onClick={() => navigate('/profile')}
@@ -165,7 +140,25 @@ const EditProfilePage: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <div className="text-white font-bold text-xl">AYA</div>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center">
+              <img 
+                src="/logo.png" 
+                alt="Logo" 
+                className="w-12 h-12 rounded-full object-cover opacity-80 hover:opacity-100 transition-opacity duration-300"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const fallback = target.nextElementSibling as HTMLElement;
+                  if (fallback) fallback.style.display = 'block';
+                }}
+              />
+              <div className="hidden w-12 h-12 relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-400 rounded-full opacity-80"></div>
+                <div className="absolute inset-1 bg-black/50 rounded-full flex items-center justify-center">
+                  <div className="text-white font-bold text-sm">A</div>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div className="text-white font-medium tracking-wide">

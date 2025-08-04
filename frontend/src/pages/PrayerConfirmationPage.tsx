@@ -5,6 +5,7 @@ import { NewsEvent } from '../types';
 import { PrayerAudioPlayer } from '../components/Audio';
 import { Button } from '../components/UI';
 import { Light, PrayerNoteWithLight } from '@/services';
+import { StarfieldBackground } from '@/components/shared';
 
 interface GeneratedPrayerState {
   generatedPrayer: GeneratedPrayer;
@@ -36,7 +37,10 @@ const PrayerConfirmationPage: React.FC = () => {
   if (!prayerContent) {
     return (
       <div className="relative w-screen h-screen flex items-center justify-center bg-gradient-to-b from-black via-gray-900 to-black text-white">
-        <div className="text-center">
+        {/* Starfield Background */}
+        <StarfieldBackground />
+        
+        <div className="text-center relative z-10">
           <h2 className="text-2xl font-bold mb-4">No Prayer Found</h2>
           <p className="text-gray-400 mb-6">Please create a prayer first.</p>
           <Button
@@ -75,32 +79,10 @@ const PrayerConfirmationPage: React.FC = () => {
     }
   };
 
-  // Helper function to render starry background
-  const renderStarryBackground = () => {
-    return (
-      <div className="absolute inset-0">
-        {Array.from({ length: 150 }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              opacity: Math.random() * 0.8 + 0.2,
-            }}
-          />
-        ))}
-      </div>
-    );
-  };
-
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-gradient-to-b from-black via-gray-900 to-black">
-      {/* Starry background */}
-      <div className="absolute inset-0 opacity-40">
-        {renderStarryBackground()}
-      </div>
+      {/* Starfield Background */}
+      <StarfieldBackground />
 
       {/* Cosmic glow effect */}
       <div className="absolute inset-0 flex items-center justify-center">
@@ -114,11 +96,29 @@ const PrayerConfirmationPage: React.FC = () => {
       </div>
 
       {/* Top Navigation */}
-      <div className="absolute top-0 left-0 right-0 z-30 p-6">
+      <div className="absolute top-0 left-0 right-0 z-30 p-8">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <div className="text-white font-bold text-xl">AYA</div>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center">
+              <img 
+                src="/logo.png" 
+                alt="Logo" 
+                className="w-12 h-12 rounded-full object-cover opacity-80 hover:opacity-100 transition-opacity duration-300"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const fallback = target.nextElementSibling as HTMLElement;
+                  if (fallback) fallback.style.display = 'block';
+                }}
+              />
+              <div className="hidden w-12 h-12 relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-400 rounded-full opacity-80"></div>
+                <div className="absolute inset-1 bg-black/50 rounded-full flex items-center justify-center">
+                  <div className="text-white font-bold text-sm">A</div>
+                </div>
+              </div>
+            </div>
             <div className="text-gray-400 text-sm">Global Prayer Network</div>
           </div>
           
